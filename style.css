@@ -1,0 +1,11 @@
+*{box-sizing:border-box}
+body{margin:0;background:#001d16;color:#fff;font-family:Arial,sans-serif}
+.wrap{max-width:480px;margin:auto;padding:28px 20px}
+h1{text-align:center;font-size:38px;margin:25px 0 8px}
+.sub{text-align:center;color:#b8d5cc;margin-bottom:30px}
+.card{background:#07352b;border:1px solid #17624f;border-radius:18px;padding:22px}
+h2{margin-top:0;text-align:center}
+input{width:100%;padding:14px;margin:7px 0;border:0;border-radius:10px;font-size:16px}
+button{width:100%;padding:14px;margin-top:10px;border:0;border-radius:10px;background:#19a974;color:white;font-size:17px;font-weight:bold}
+button.secondary{background:#315c51}
+#message{text-align:center;margin-top:15px;min-height:22px}
