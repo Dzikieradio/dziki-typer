@@ -4,10 +4,24 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Dziki Typer</title>
+<link rel="stylesheet" href="style.css">
 </head>
-<body style="background:#001d16;color:white;font-family:Arial;text-align:center;padding:40px">
+<body>
+<div class="wrap">
 <h1>⚽ Dziki Typer</h1>
-<h2>TEST DZIAŁA ✅</h2>
-<p>Za chwilę uruchomimy logowanie.</p>
+<p class="sub">Powiat żywiecki • sezon 2026/2027</p>
+
+<div class="card">
+<h2>Logowanie</h2>
+<input id="email" type="email" placeholder="E-mail">
+<input id="password" type="password" placeholder="Hasło (min. 8 znaków)">
+<button onclick="login()">Zaloguj się</button>
+<button class="secondary" onclick="register()">Załóż konto</button>
+<div id="message"></div>
+</div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="app.js"></script>
 </body>
 </html>
