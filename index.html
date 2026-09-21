@@ -4,12 +4,276 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Dziki Typer</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #0d1b16;
+      color: white;
+    }
+
+    header {
+      background: linear-gradient(135deg, #126b3a, #0b3d25);
+      padding: 28px 16px;
+      text-align: center;
+      border-bottom: 3px solid #32d17d;
+    }
+
+    header h1 {
+      margin: 0;
+      font-size: 34px;
+    }
+
+    header p {
+      margin: 8px 0 0;
+      color: #d5f5e3;
+    }
+
+    .container {
+      max-width: 650px;
+      margin: auto;
+      padding: 18px;
+    }
+
+    .section-title {
+      margin: 12px 0 16px;
+      font-size: 22px;
+    }
+
+    .match {
+      background: #172a22;
+      border: 1px solid #28533e;
+      border-radius: 16px;
+      padding: 18px;
+      margin-bottom: 16px;
+      box-shadow: 0 5px 15px rgba(0,0,0,.25);
+    }
+
+    .date {
+      color: #9ccdb1;
+      font-size: 14px;
+      text-align: center;
+      margin-bottom: 14px;
+    }
+
+    .teams {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      font-weight: bold;
+    }
+
+    .team {
+      width: 36%;
+      text-align: center;
+    }
+
+    .vs {
+      color: #8fa99b;
+      font-size: 14px;
+    }
+
+    .score {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 9px;
+      margin-top: 18px;
+    }
+
+    input {
+      width: 65px;
+      height: 50px;
+      border-radius: 10px;
+      border: 2px solid #32664b;
+      background: #0c1712;
+      color: white;
+      text-align: center;
+      font-size: 22px;
+    }
+
+    input:focus {
+      outline: none;
+      border-color: #32d17d;
+    }
+
+    button {
+      width: 100%;
+      margin-top: 14px;
+      padding: 13px;
+      border: none;
+      border-radius: 10px;
+      background: #20b966;
+      color: white;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    button:active {
+      transform: scale(.98);
+    }
+
+    .saved {
+      display: none;
+      text-align: center;
+      color: #5cf39d;
+      margin-top: 10px;
+      font-size: 14px;
+    }
+
+    .info {
+      background: #14251e;
+      border-radius: 14px;
+      padding: 16px;
+      margin-top: 25px;
+      color: #bdd4c8;
+      line-height: 1.5;
+    }
+
+    footer {
+      text-align: center;
+      color: #7e9b8d;
+      padding: 25px 10px 35px;
+      font-size: 13px;
+    }
+  </style>
 </head>
 
 <body>
-  <h1>⚽ Dziki Typer</h1>
-  <h2>Typowanie lokalnych rozgrywek piłkarskich</h2>
 
-  <p>Aplikacja działa! 🎉</p>
+<header>
+  <h1>⚽ Dziki Typer</h1>
+  <p>Typuj wyniki lokalnych rozgrywek piłkarskich</p>
+</header>
+
+<main class="container">
+
+  <h2 class="section-title">🔥 Najbliższe mecze</h2>
+
+  <div class="match">
+    <div class="date">26 września • 17:00</div>
+
+    <div class="teams">
+      <div class="team">Drużyna A</div>
+      <div class="vs">VS</div>
+      <div class="team">Drużyna B</div>
+    </div>
+
+    <div class="score">
+      <input id="m1a" type="number" min="0" inputmode="numeric" placeholder="0">
+      <strong>:</strong>
+      <input id="m1b" type="number" min="0" inputmode="numeric" placeholder="0">
+    </div>
+
+    <button onclick="saveMatch(1)">Zapisz typ</button>
+    <div class="saved" id="saved1">✓ Typ zapisany</div>
+  </div>
+
+
+  <div class="match">
+    <div class="date">27 września • 15:30</div>
+
+    <div class="teams">
+      <div class="team">Drużyna C</div>
+      <div class="vs">VS</div>
+      <div class="team">Drużyna D</div>
+    </div>
+
+    <div class="score">
+      <input id="m2a" type="number" min="0" inputmode="numeric" placeholder="0">
+      <strong>:</strong>
+      <input id="m2b" type="number" min="0" inputmode="numeric" placeholder="0">
+    </div>
+
+    <button onclick="saveMatch(2)">Zapisz typ</button>
+    <div class="saved" id="saved2">✓ Typ zapisany</div>
+  </div>
+
+
+  <div class="match">
+    <div class="date">28 września • 16:00</div>
+
+    <div class="teams">
+      <div class="team">Drużyna E</div>
+      <div class="vs">VS</div>
+      <div class="team">Drużyna F</div>
+    </div>
+
+    <div class="score">
+      <input id="m3a" type="number" min="0" inputmode="numeric" placeholder="0">
+      <strong>:</strong>
+      <input id="m3b" type="number" min="0" inputmode="numeric" placeholder="0">
+    </div>
+
+    <button onclick="saveMatch(3)">Zapisz typ</button>
+    <div class="saved" id="saved3">✓ Typ zapisany</div>
+  </div>
+
+
+  <div class="info">
+    <strong>🏆 Punktacja</strong><br><br>
+    🎯 Dokładny wynik – 3 pkt<br>
+    ✅ Poprawny zwycięzca lub remis – 1 pkt<br>
+    ❌ Błędny typ – 0 pkt
+  </div>
+
+</main>
+
+<footer>
+  Dziki Typer • Dziki Radio
+</footer>
+
+
+<script>
+  function saveMatch(number) {
+
+    const home = document.getElementById("m" + number + "a").value;
+    const away = document.getElementById("m" + number + "b").value;
+
+    if (home === "" || away === "") {
+      alert("Wpisz wynik meczu.");
+      return;
+    }
+
+    localStorage.setItem(
+      "dzikiMatch" + number,
+      JSON.stringify({
+        home: home,
+        away: away
+      })
+    );
+
+    document.getElementById("saved" + number).style.display = "block";
+  }
+
+
+  function loadMatches() {
+
+    for (let number = 1; number <= 3; number++) {
+
+      const saved = localStorage.getItem("dzikiMatch" + number);
+
+      if (saved) {
+
+        const result = JSON.parse(saved);
+
+        document.getElementById("m" + number + "a").value = result.home;
+        document.getElementById("m" + number + "b").value = result.away;
+
+        document.getElementById("saved" + number).style.display = "block";
+      }
+    }
+  }
+
+  loadMatches();
+</script>
+
 </body>
 </html>
