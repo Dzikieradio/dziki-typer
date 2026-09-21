@@ -1,16 +1,1 @@
-async function logout(){
-  await db.auth.signOut();
-  location.reload();
-}
-
-async function checkSession(){
-  const {data}=await db.auth.getSession();
-
-  if(data.session){
-    document.getElementById('message').innerHTML=
-      '✅ Zalogowany: '+data.session.user.email+
-      '<br><button onclick="logout()">Wyloguj</button>';
-  }
-}
-
-checkSession();
+const U='https://kfysmqwhpzemoknqakzn.supabase.co';const K='sb_publishable_UNdKtQ2mCMaaWcMK0FvVIA_r8cNIUl-';const db=supabase.createClient(U,K);const auth=document.getElementById('auth'),app=document.getElementById('app'),emailInput=document.getElementById('email'),passwordInput=document.getElementById('password'),message=document.getElementById('message'),userInfo=document.getElementById('userInfo');function showUser(u){auth.classList.add('hidden');app.classList.remove('hidden');userInfo.textContent='Zalogowany: '+u.email}function showLogin(){app.classList.add('hidden');auth.classList.remove('hidden')}async function login(){message.textContent='Logowanie...';const{data,error}=await db.auth.signInWithPassword({email:emailInput.value.trim(),password:passwordInput.value});if(error){message.textContent='❌ '+error.message;return}message.textContent='';showUser(data.user)}async function register(){message.textContent='Tworzenie konta...';const{data,error}=await db.auth.signUp({email:emailInput.value.trim(),password:passwordInput.value});if(error){message.textContent='❌ '+error.message;return}if(data.session){showUser(data.user);return}message.textContent='✅ Konto utworzone. Sprawdź e-mail i potwierdź rejestrację.'}async function logout(){await db.auth.signOut();passwordInput.value='';showLogin()}async function start(){const{data}=await db.auth.getSession();if(data.session)showUser(data.session.user);else showLogin()}start();db.auth.onAuthStateChange((_e,s)=>{if(s)showUser(s.user)});
