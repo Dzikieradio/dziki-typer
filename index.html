@@ -2,425 +2,496 @@
 <html lang="pl">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Dziki Typer</title>
 
 <style>
 *{box-sizing:border-box}
-
 body{
-  margin:0;
-  font-family:Arial,sans-serif;
-  background:#071a13;
-  color:#fff;
+ margin:0;
+ font-family:Arial,sans-serif;
+ background:#061b12;
+ color:#fff
 }
-
 header{
-  background:linear-gradient(135deg,#08743d,#064d2c);
-  padding:26px 15px;
-  text-align:center;
-  border-bottom:4px solid #24d27b;
+ background:linear-gradient(135deg,#08783e,#05552e);
+ text-align:center;
+ padding:28px 15px;
+ border-bottom:4px solid #29dc82
 }
-
-header h1{
-  margin:0;
-  font-size:34px;
-}
-
-header p{
-  margin:10px 0 0;
-  color:#d5f4e3;
-  font-size:16px;
-}
-
-.container{
-  max-width:700px;
-  margin:auto;
-  padding:18px;
-}
-
+header h1{margin:0;font-size:36px}
+header p{margin:10px 0 0;color:#d5f3e3;font-size:17px}
+.container{max-width:750px;margin:auto;padding:18px}
 .filters{
-  display:flex;
-  gap:8px;
-  overflow-x:auto;
-  padding-bottom:10px;
+ display:flex;gap:8px;overflow-x:auto;
+ padding:10px 0 18px
 }
-
 .filter{
-  flex:0 0 auto;
-  border:1px solid #287451;
-  background:#132a21;
-  color:#d6e9df;
-  padding:10px 14px;
-  border-radius:20px;
-  font-weight:bold;
-  cursor:pointer;
+ flex:0 0 auto;
+ border:1px solid #297451;
+ background:#10291e;
+ color:#eee;
+ padding:12px 16px;
+ border-radius:24px;
+ font-weight:bold;
+ font-size:15px
 }
-
-.filter.active{
-  background:#20bd69;
-  color:#fff;
-}
-
-h2{
-  margin:20px 0 14px;
-}
-
+.filter.active{background:#20c871}
+h2{font-size:28px;margin:20px 0}
 .league-title{
-  color:#55df98;
-  font-size:15px;
-  font-weight:bold;
-  margin:25px 4px 10px;
-  text-transform:uppercase;
+ color:#55df98;
+ font-size:18px;
+ font-weight:bold;
+ margin:28px 5px 13px
 }
-
 .match{
-  background:#12291f;
-  border:1px solid #285a43;
-  border-radius:17px;
-  padding:18px;
-  margin-bottom:15px;
-  box-shadow:0 6px 18px rgba(0,0,0,.25);
+ background:#112d21;
+ border:1px solid #286046;
+ border-radius:18px;
+ padding:17px;
+ margin-bottom:16px
 }
-
 .date{
-  text-align:center;
-  color:#9fd0b6;
-  margin-bottom:16px;
-  font-size:14px;
+ text-align:center;
+ color:#a4d4bb;
+ font-size:15px;
+ margin-bottom:18px
 }
-
 .teams{
-  display:grid;
-  grid-template-columns:1fr 45px 1fr;
-  align-items:center;
-  gap:5px;
-  font-weight:bold;
+ display:grid;
+ grid-template-columns:1fr 45px 1fr;
+ align-items:center;
+ gap:5px
 }
-
-.team{
-  text-align:center;
-  line-height:1.3;
+.team{text-align:center;font-weight:bold;font-size:17px;line-height:1.25}
+.crest{
+ width:50px;height:50px;
+ border-radius:50%;
+ background:#183c2c;
+ border:1px solid #36795a;
+ margin:0 auto 8px;
+ display:flex;align-items:center;justify-content:center;
+ font-size:25px
 }
-
-.vs{
-  text-align:center;
-  color:#839f91;
-}
-
+.vs{text-align:center;color:#809d8e;font-weight:bold}
 .score{
-  display:flex;
-  justify-content:center;
-  align-items:center;
-  gap:10px;
-  margin-top:18px;
+ display:flex;justify-content:center;align-items:center;
+ gap:10px;margin-top:18px
 }
-
 .score input{
-  width:65px;
-  height:52px;
-  background:#08150f;
-  color:white;
-  border:2px solid #287451;
-  border-radius:12px;
-  text-align:center;
-  font-size:22px;
+ width:65px;height:52px;
+ border:2px solid #31845f;
+ background:#061b12;
+ color:#fff;
+ border-radius:12px;
+ text-align:center;
+ font-size:22px
 }
-
-.score input:focus{
-  outline:none;
-  border-color:#32e187;
-}
-
 .save{
-  width:100%;
-  margin-top:15px;
-  padding:14px;
-  border:0;
-  border-radius:11px;
-  background:#20bd69;
-  color:#fff;
-  font-size:16px;
-  font-weight:bold;
-  cursor:pointer;
+ width:100%;
+ border:0;
+ border-radius:12px;
+ background:#20c871;
+ color:#fff;
+ padding:14px;
+ font-size:17px;
+ font-weight:bold;
+ margin-top:15px
 }
-
-.save:active{
-  transform:scale(.98);
+.save:disabled{
+ background:#40594d;
+ color:#b5c1bb
 }
-
-.saved{
-  display:none;
-  color:#5ff3a3;
-  text-align:center;
-  margin-top:10px;
-  font-size:14px;
+.status{
+ text-align:center;
+ margin-top:10px;
+ font-size:14px;
+ color:#61efa8
 }
-
+.locked{color:#ffbf69}
+.pause{
+ background:#0d261b;
+ border:1px dashed #376c52;
+ border-radius:13px;
+ padding:13px;
+ text-align:center;
+ color:#a7c8b7;
+ margin-bottom:15px
+}
 .rules{
-  margin-top:28px;
-  padding:18px;
-  background:#10261c;
-  border:1px solid #27533f;
-  border-radius:15px;
-  line-height:1.7;
+ margin-top:30px;
+ background:#10291e;
+ border:1px solid #285a43;
+ border-radius:16px;
+ padding:18px;
+ line-height:1.8
 }
-
 footer{
-  text-align:center;
-  padding:28px 10px 40px;
-  color:#769688;
-  font-size:13px;
+ text-align:center;
+ color:#779b89;
+ padding:35px 10px
 }
-
-.hidden{
-  display:none;
-}
+.hidden{display:none}
 </style>
 </head>
 
 <body>
 
 <header>
-  <h1>⚽ Dziki Typer</h1>
-  <p>Powiat żywiecki • sezon 2026/2027</p>
+ <h1>⚽ Dziki Typer</h1>
+ <p>Powiat żywiecki • sezon 2026/2027</p>
 </header>
 
 <main class="container">
 
-  <div class="filters">
-    <button class="filter active" onclick="filterLeague('all',this)">Wszystkie</button>
-    <button class="filter" onclick="filterLeague('okregowa',this)">Okręgówka</button>
-    <button class="filter" onclick="filterLeague('a',this)">A Klasa</button>
-    <button class="filter" onclick="filterLeague('b',this)">B Klasa</button>
-  </div>
+<div class="filters">
+ <button class="filter active" data-filter="all">Wszystkie</button>
+ <button class="filter" data-filter="okregowa">Okręgówka</button>
+ <button class="filter" data-filter="a">A Klasa</button>
+ <button class="filter" data-filter="b">B Klasa</button>
+</div>
 
-  <h2>🔥 Mecze do typowania</h2>
+<h2>🔥 Najbliższa kolejka</h2>
 
-  <!-- OKRĘGÓWKA -->
+<div id="matches"></div>
 
-  <section class="league" data-league="okregowa">
-
-    <div class="league-title">🏆 Liga Okręgowa Skoczów–Żywiec</div>
-
-    <div class="match">
-      <div class="date">Najbliższa kolejka</div>
-
-      <div class="teams">
-        <div class="team">Drużyna gospodarzy</div>
-        <div class="vs">VS</div>
-        <div class="team">Drużyna gości</div>
-      </div>
-
-      <div class="score">
-        <input id="m1a" type="number" min="0" inputmode="numeric">
-        <strong>:</strong>
-        <input id="m1b" type="number" min="0" inputmode="numeric">
-      </div>
-
-      <button class="save" onclick="saveMatch(1)">Zapisz typ</button>
-      <div class="saved" id="saved1">✓ Typ zapisany</div>
-    </div>
-
-  </section>
-
-
-  <!-- A KLASA -->
-
-  <section class="league" data-league="a">
-
-    <div class="league-title">⚽ A Klasa Żywiec</div>
-
-    <div class="match">
-      <div class="date">Najbliższa kolejka</div>
-
-      <div class="teams">
-        <div class="team">Koszarawa Żywiec</div>
-        <div class="vs">VS</div>
-        <div class="team">Sopotnia</div>
-      </div>
-
-      <div class="score">
-        <input id="m2a" type="number" min="0" inputmode="numeric">
-        <strong>:</strong>
-        <input id="m2b" type="number" min="0" inputmode="numeric">
-      </div>
-
-      <button class="save" onclick="saveMatch(2)">Zapisz typ</button>
-      <div class="saved" id="saved2">✓ Typ zapisany</div>
-    </div>
-
-
-    <div class="match">
-      <div class="date">Najbliższa kolejka</div>
-
-      <div class="teams">
-        <div class="team">Magura Bystra</div>
-        <div class="vs">VS</div>
-        <div class="team">Skrzyczne Lipowa</div>
-      </div>
-
-      <div class="score">
-        <input id="m3a" type="number" min="0" inputmode="numeric">
-        <strong>:</strong>
-        <input id="m3b" type="number" min="0" inputmode="numeric">
-      </div>
-
-      <button class="save" onclick="saveMatch(3)">Zapisz typ</button>
-      <div class="saved" id="saved3">✓ Typ zapisany</div>
-    </div>
-
-  </section>
-
-
-  <!-- B KLASA -->
-
-  <section class="league" data-league="b">
-
-    <div class="league-title">⚽ B Klasa Żywiec</div>
-
-    <div class="match">
-      <div class="date">Najbliższa kolejka</div>
-
-      <div class="teams">
-        <div class="team">Soła Żywiec</div>
-        <div class="vs">VS</div>
-        <div class="team">Korbielów</div>
-      </div>
-
-      <div class="score">
-        <input id="m4a" type="number" min="0" inputmode="numeric">
-        <strong>:</strong>
-        <input id="m4b" type="number" min="0" inputmode="numeric">
-      </div>
-
-      <button class="save" onclick="saveMatch(4)">Zapisz typ</button>
-      <div class="saved" id="saved4">✓ Typ zapisany</div>
-    </div>
-
-
-    <div class="match">
-      <div class="date">Najbliższa kolejka</div>
-
-      <div class="teams">
-        <div class="team">Jeleśnianka Jeleśnia</div>
-        <div class="vs">VS</div>
-        <div class="team">Pewel Ślemieńska</div>
-      </div>
-
-      <div class="score">
-        <input id="m5a" type="number" min="0" inputmode="numeric">
-        <strong>:</strong>
-        <input id="m5b" type="number" min="0" inputmode="numeric">
-      </div>
-
-      <button class="save" onclick="saveMatch(5)">Zapisz typ</button>
-      <div class="saved" id="saved5">✓ Typ zapisany</div>
-    </div>
-
-
-    <div class="match">
-      <div class="date">Najbliższa kolejka</div>
-
-      <div class="teams">
-        <div class="team">GAPN Świnna</div>
-        <div class="vs">VS</div>
-        <div class="team">Halny Przyborów</div>
-      </div>
-
-      <div class="score">
-        <input id="m6a" type="number" min="0" inputmode="numeric">
-        <strong>:</strong>
-        <input id="m6b" type="number" min="0" inputmode="numeric">
-      </div>
-
-      <button class="save" onclick="saveMatch(6)">Zapisz typ</button>
-      <div class="saved" id="saved6">✓ Typ zapisany</div>
-    </div>
-
-  </section>
-
-
-  <div class="rules">
-    <strong>🏆 Zasady punktacji</strong><br><br>
-
-    🎯 Dokładny wynik – <strong>3 pkt</strong><br>
-    ✅ Poprawny zwycięzca lub remis – <strong>1 pkt</strong><br>
-    ❌ Nietrafiony typ – <strong>0 pkt</strong>
-  </div>
+<div class="rules">
+ <strong>🏆 Zasady punktacji</strong><br><br>
+ 🎯 Dokładny wynik – <strong>3 pkt</strong><br>
+ ✅ Poprawny zwycięzca lub remis – <strong>1 pkt</strong><br>
+ ❌ Nietrafiony typ – <strong>0 pkt</strong><br><br>
+ 🔒 Typowanie zostaje zablokowane w chwili rozpoczęcia meczu.
+</div>
 
 </main>
 
-
 <footer>
-  ⚽ Dziki Typer<br>
-  Dziki Radio • Powiat żywiecki
+ ⚽ Dziki Typer<br>
+ Dziki Radio • Powiat żywiecki
 </footer>
-
 
 <script>
 
-function filterLeague(league,button){
+const matches=[
 
-  const leagues=document.querySelectorAll(".league");
-  const buttons=document.querySelectorAll(".filter");
+/* OKRĘGÓWKA */
 
-  buttons.forEach(btn=>btn.classList.remove("active"));
+{
+ id:"o1",league:"okregowa",
+ home:"GKS Radziechowy-Wieprz",
+ away:"LKS Pogórze",
+ date:"26.09.2026",time:"16:00",
+ kickoff:"2026-09-26T16:00:00"
+},
+{
+ id:"o2",league:"okregowa",
+ home:"LKS Ślemień",
+ away:"Wisła Strumień",
+ date:"27.09.2026",time:"17:00",
+ kickoff:"2026-09-27T17:00:00"
+},
+{
+ id:"o3",league:"okregowa",
+ home:"LKS Słotwina",
+ away:"Bory Pietrzykowice",
+ date:"27.09.2026",time:"15:00",
+ kickoff:"2026-09-27T15:00:00"
+},
+{
+ id:"o4",league:"okregowa",
+ home:"Cukrownik Chybie",
+ away:"Victoria Hażlach",
+ date:"26.09.2026",time:"16:00",
+ kickoff:"2026-09-26T16:00:00"
+},
+{
+ id:"o5",league:"okregowa",
+ home:"LKS Leśna",
+ away:"Podhalanka Milówka",
+ date:"27.09.2026",time:"15:00",
+ kickoff:"2026-09-27T15:00:00"
+},
+{
+ id:"o6",league:"okregowa",
+ home:"Orzeł Łękawica",
+ away:"Maksymilian Cisiec",
+ date:"26.09.2026",time:"16:00",
+ kickoff:"2026-09-26T16:00:00"
+},
+{
+ id:"o7",league:"okregowa",
+ home:"Strażak Dębowiec",
+ away:"WSS Wisła",
+ date:"26.09.2026",time:"16:00",
+ kickoff:"2026-09-26T16:00:00"
+},
+
+/* A KLASA */
+
+{
+ id:"a1",league:"a",
+ home:"GKS II Radziechowy-Wieprz",
+ away:"Skałka Żabnica",
+ date:"27.09.2026",time:"11:00",
+ kickoff:"2026-09-27T11:00:00"
+},
+{
+ id:"a2",league:"a",
+ home:"Magórka Czernichów",
+ away:"Soła Rajcza",
+ date:"27.09.2026",time:"11:00",
+ kickoff:"2026-09-27T11:00:00"
+},
+{
+ id:"a3",league:"a",
+ home:"LKS Sopotnia",
+ away:"Magura Bystra",
+ date:"26.09.2026",time:"16:30",
+ kickoff:"2026-09-26T16:30:00"
+},
+{
+ id:"a4",league:"a",
+ home:"Grapa Trzebinia",
+ away:"Świt Cięcina",
+ date:"26.09.2026",time:"16:00",
+ kickoff:"2026-09-26T16:00:00"
+},
+{
+ id:"a5",league:"a",
+ home:"Stal-Śrubiarnia II Żywiec",
+ away:"Czarni-Góral Żywiec",
+ date:"Termin do potwierdzenia",
+ time:"",
+ kickoff:null
+},
+{
+ id:"a6",league:"a",
+ home:"Beskid Gilowice",
+ away:"Skrzyczne Lipowa",
+ date:"27.09.2026",time:"15:00",
+ kickoff:"2026-09-27T15:00:00"
+},
+
+/* B KLASA */
+
+{
+ id:"b1",league:"b",
+ home:"Jeleśnianka Jeleśnia",
+ away:"LKS Korbielów",
+ date:"27.09.2026",time:"11:00",
+ kickoff:"2026-09-27T11:00:00"
+},
+{
+ id:"b2",league:"b",
+ home:"GAPN Świnna",
+ away:"LKS Pewel Ślemieńska",
+ date:"26.09.2026",time:"13:30",
+ kickoff:"2026-09-26T13:30:00"
+},
+{
+ id:"b3",league:"b",
+ home:"Soła Żywiec",
+ away:"Halny Przyborów",
+ date:"27.09.2026",time:"11:00",
+ kickoff:"2026-09-27T11:00:00"
+},
+{
+ id:"b4",league:"b",
+ home:"Jezioro Żywieckie Zarzecze",
+ away:"Orzeł II Łękawica",
+ date:"26.09.2026",time:"15:00",
+ kickoff:"2026-09-26T15:00:00"
+}
+
+];
+
+const leagueNames={
+ okregowa:"🏆 LIGA OKRĘGOWA SKOCZÓW–ŻYWIEC",
+ a:"⚽ A KLASA ŻYWIEC",
+ b:"⚽ B KLASA ŻYWIEC"
+};
+
+const pauses={
+ a:"⏸ Pauzuje: Koszarawa Żywiec",
+ b:"⏸ Pauzuje: LKS II Sopotnia"
+};
+
+let currentFilter="all";
+
+function loadPicks(){
+ try{
+  return JSON.parse(localStorage.getItem("dzikiTyperPicksV3"))||{};
+ }catch(e){
+  return {};
+ }
+}
+
+function savePick(id){
+
+ const match=matches.find(m=>m.id===id);
+
+ if(match.kickoff && new Date()>=new Date(match.kickoff)){
+  alert("Typowanie tego meczu zostało zakończone.");
+  return;
+ }
+
+ const home=document.getElementById(id+"h").value;
+ const away=document.getElementById(id+"a").value;
+
+ if(home===""||away===""){
+  alert("Wpisz oba wyniki.");
+  return;
+ }
+
+ if(Number(home)<0||Number(away)<0){
+  alert("Wynik nie może być ujemny.");
+  return;
+ }
+
+ const picks=loadPicks();
+
+ picks[id]={
+  home:Number(home),
+  away:Number(away)
+ };
+
+ localStorage.setItem(
+  "dzikiTyperPicksV3",
+  JSON.stringify(picks)
+ );
+
+ document.getElementById("status-"+id).textContent=
+ "✓ Typ zapisany: "+home+" : "+away;
+}
+
+function matchHTML(m){
+
+ const picks=loadPicks();
+ const pick=picks[m.id];
+
+ const locked=
+  m.kickoff &&
+  new Date()>=new Date(m.kickoff);
+
+ const disabled=locked?"disabled":"";
+
+ let status="";
+
+ if(locked){
+  status='<div class="status locked">🔒 Typowanie zakończone</div>';
+ }else if(pick){
+  status='<div class="status" id="status-'+m.id+
+  '">✓ Typ zapisany: '+pick.home+' : '+pick.away+'</div>';
+ }else{
+  status='<div class="status" id="status-'+m.id+'"></div>';
+ }
+
+ return `
+ <div class="match">
+   <div class="date">
+    📅 ${m.date}${m.time ? " • ⏰ "+m.time : ""}
+   </div>
+
+   <div class="teams">
+
+    <div class="team">
+     <div class="crest">⚽</div>
+     ${m.home}
+    </div>
+
+    <div class="vs">VS</div>
+
+    <div class="team">
+     <div class="crest">⚽</div>
+     ${m.away}
+    </div>
+
+   </div>
+
+   <div class="score">
+    <input
+     id="${m.id}h"
+     type="number"
+     min="0"
+     inputmode="numeric"
+     value="${pick ? pick.home : ""}"
+     ${disabled}
+    >
+    <strong>:</strong>
+    <input
+     id="${m.id}a"
+     type="number"
+     min="0"
+     inputmode="numeric"
+     value="${pick ? pick.away : ""}"
+     ${disabled}
+    >
+   </div>
+
+   <button
+    class="save"
+    onclick="savePick('${m.id}')"
+    ${disabled}>
+    ${locked ? "🔒 Typowanie zakończone" : "Zapisz typ"}
+   </button>
+
+   ${status}
+
+ </div>`;
+}
+
+function render(){
+
+ const container=document.getElementById("matches");
+ container.innerHTML="";
+
+ ["okregowa","a","b"].forEach(league=>{
+
+  if(currentFilter!=="all" && currentFilter!==league) return;
+
+  const group=matches.filter(m=>m.league===league);
+
+  const section=document.createElement("section");
+
+  section.innerHTML=
+   `<div class="league-title">${leagueNames[league]}</div>`;
+
+  group.forEach(m=>{
+   section.innerHTML+=matchHTML(m);
+  });
+
+  if(pauses[league]){
+   section.innerHTML+=
+    `<div class="pause">${pauses[league]}</div>`;
+  }
+
+  container.appendChild(section);
+
+ });
+
+}
+
+document.querySelectorAll(".filter").forEach(button=>{
+
+ button.addEventListener("click",()=>{
+
+  document.querySelectorAll(".filter")
+   .forEach(b=>b.classList.remove("active"));
+
   button.classList.add("active");
 
-  leagues.forEach(section=>{
+  currentFilter=button.dataset.filter;
 
-    if(league==="all" || section.dataset.league===league){
-      section.classList.remove("hidden");
-    }else{
-      section.classList.add("hidden");
-    }
+  render();
 
-  });
-}
+ });
 
+});
 
-function saveMatch(number){
+render();
 
-  const home=document.getElementById("m"+number+"a").value;
-  const away=document.getElementById("m"+number+"b").value;
-
-  if(home==="" || away===""){
-    alert("Wpisz oba wyniki.");
-    return;
-  }
-
-  localStorage.setItem(
-    "dzikiTyperMatch"+number,
-    JSON.stringify({
-      home:home,
-      away:away
-    })
-  );
-
-  document.getElementById("saved"+number).style.display="block";
-}
-
-
-function loadMatches(){
-
-  for(let number=1;number<=6;number++){
-
-    const saved=localStorage.getItem("dzikiTyperMatch"+number);
-
-    if(saved){
-
-      const result=JSON.parse(saved);
-
-      document.getElementById("m"+number+"a").value=result.home;
-      document.getElementById("m"+number+"b").value=result.away;
-
-      document.getElementById("saved"+number).style.display="block";
-    }
-  }
-}
-
-loadMatches();
+/* odśwież blokady co minutę */
+setInterval(render,60000);
 
 </script>
 
