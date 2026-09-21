@@ -28,14 +28,22 @@ async function saveResult(id){
   await loadResults();await loadAdmin();render();renderLive();
 }
 function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function autoRank(points,exact,finished){
+  points=Number(points||0); exact=Number(exact||0); finished=Number(finished||0);
+  if(finished>=100 && points>=120 && exact>=15)return 'Mistrz Typera';
+  if(finished>=50 && points>=55 && exact>=7)return 'Ekspert';
+  if(finished>=25 && points>=25 && exact>=3)return 'Dobry Typer';
+  if(finished>=10 && points>=8)return 'Typer';
+  return 'Debiutant';
+}
 async function loadAdminUsers(){
   if(!isAdmin)return;
   const{data,error}=await db.rpc('admin_users');
   if(error){$('adminUsers').innerHTML='<div class="warn">❌ '+esc(error.message)+'</div>';return}
   const rows=data||[];
   $('adminUsers').innerHTML=rows.length?rows.map(r=>{
-    const rank=r.rank||r.rank_name||'Debiutant';
     const finished=r.finished_count??r.finished_picks??0;
+    const rank=autoRank(r.points,r.exact_scores,finished);
     const points=r.points??0, exact=r.exact_scores??0, count=r.picks_count??0;
     const mine=r.user_id===user.id;
     return `<div class="usercard"><div class="usercardTop"><div><b>${esc(r.nickname||'Bez nicku')}</b><small>${esc(r.email||'')}</small></div><span class="badge">${esc(rank)}</span></div><div class="userstats"><span>${points} pkt</span><span>🎯 ${exact}</span><span>${finished} rozliczonych</span><span>${count} typów</span></div><button onclick="adminUserPicks('${r.user_id}','${esc(r.nickname||r.email||'Użytkownik')}')">📊 Typy</button>${mine?'<small class="muted">Konto administratora</small>':`<button onclick="adminDeleteUser('${r.user_id}','${esc(r.email||r.nickname||'użytkownika')}')">🗑 Usuń użytkownika</button>`}</div>`;
@@ -79,7 +87,7 @@ async function adminDeleteUser(id,label){
   await loadRanking();
 }
 
-async function loadRanking(){const{data,error}=await db.rpc('full_ranking');if(error){$('ranking').textContent='Nie udało się pobrać rankingu.';return}const rows=data||[];$('ranking').innerHTML='<div class="rankrow rankhead"><span>#</span><span>Gracz</span><span class="rankcount">Pkt</span></div>'+rows.map((r,i)=>`<div class="rankrow"><span class="ranknum">${i+1}</span><span>${esc(r.nickname||'Bez nicku')} <span class="rankbadge">${esc(r.rank_name||'Debiutant')}</span><small style="display:block;color:#9fc7bb">🎯 ${r.exact_scores} • typy ${r.picks_count}</small></span><span class="rankcount"><b>${r.points}</b></span></div>`).join('')}async function showTab(t){
+async function loadRanking(){const{data,error}=await db.rpc('full_ranking');if(error){$('ranking').textContent='Nie udało się pobrać rankingu.';return}const rows=data||[];$('ranking').innerHTML='<div class="rankrow rankhead"><span>#</span><span>Gracz</span><span class="rankcount">Pkt</span></div>'+rows.map((r,i)=>`<div class="rankrow"><span class="ranknum">${i+1}</span><span>${esc(r.nickname||'Bez nicku')} <span class="rankbadge">${esc(autoRank(r.points,r.exact_scores,r.finished_count??r.finished_picks??0))}</span><small style="display:block;color:#9fc7bb">🎯 ${r.exact_scores} • typy ${r.picks_count}</small></span><span class="rankcount"><b>${r.points}</b></span></div>`).join('')}async function showTab(t){
   const m=t==='matches',l=t==='live',r=t==='ranking',a=t==='admin';
   $('matchesView').classList.toggle('hidden',!m);
   $('liveView').classList.toggle('hidden',!l);
