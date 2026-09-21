@@ -27,8 +27,19 @@ async function saveResult(id){
   $('adminMsg').textContent=status==='live'?'✓ Wynik LIVE zapisany.':status==='finished'?'✓ Mecz zakończony. Ranking został przeliczony.':'✓ Status zapisany.';
   await loadResults();await loadAdmin();render();renderLive();
 }
+function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+async function loadAdminUsers(){
+  if(!isAdmin)return;
+  const{data,error}=await db.rpc('admin_users');
+  if(error){$('adminUsers').innerHTML='<div class="warn">❌ '+esc(error.message)+'</div>';return}
+  const rows=data||[];
+  $('adminUsers').innerHTML=rows.length?rows.map(r=>`<div class="usercard"><div class="usercardTop"><div><b>${esc(r.nickname||'Bez nicku')}</b><small>${esc(r.email||'')}</small></div><span class="badge">${esc(r.rank_name||'Debiutant')}</span></div><div class="userstats"><span>${r.points} pkt</span><span>🎯 ${r.exact_scores}</span><span>${r.finished_picks} rozliczonych</span><span>${r.picks_count} typów</span></div><label>Nick</label><div class="adminedit"><input id="nick-${r.user_id}" maxlength="24" value="${esc(r.nickname||'')}"><button onclick="adminSaveNick('${r.user_id}')">Zapisz</button></div><label>Ranga</label><div class="adminedit"><select id="rank-${r.user_id}"><option value="">Automatyczna</option>${['Debiutant','Nowicjusz','Typer','Dobry Typer','Ekspert','Mistrz Typera'].map(x=>`<option value="${x}" ${r.manual_rank===x?'selected':''}>${x}</option>`).join('')}</select><button onclick="adminSaveRank('${r.user_id}')">Zapisz</button></div></div>`).join(''):'Brak użytkowników.';
+}
+async function adminSaveNick(id){const n=$('nick-'+id).value.trim();const{error}=await db.rpc('admin_set_nickname',{p_user_id:id,p_nickname:n});if(error){alert('Nie udało się zapisać: '+error.message);return}await loadAdminUsers();await loadRanking()}
+async function adminSaveRank(id){const rank=$('rank-'+id).value||null;const{error}=await db.rpc('admin_set_rank',{p_user_id:id,p_rank:rank});if(error){alert('Nie udało się zapisać: '+error.message);return}await loadAdminUsers();await loadRanking()}
 
-async function loadRanking(){const{data,error}=await db.rpc('full_ranking');if(error){$('ranking').textContent='Nie udało się pobrać rankingu.';return}const rows=data||[];$('ranking').innerHTML='<div class="rankrow rankhead"><span>#</span><span>Gracz</span><span class="rankcount">Pkt</span></div>'+rows.map((r,i)=>`<div class="rankrow"><span class="ranknum">${i+1}</span><span>${r.nickname}<small style="display:block;color:#9fc7bb">🎯 ${r.exact_scores} • typy ${r.picks_count}</small></span><span class="rankcount"><b>${r.points}</b></span></div>`).join('')}async function showTab(t){
+
+async function loadRanking(){const{data,error}=await db.rpc('full_ranking');if(error){$('ranking').textContent='Nie udało się pobrać rankingu.';return}const rows=data||[];$('ranking').innerHTML='<div class="rankrow rankhead"><span>#</span><span>Gracz</span><span class="rankcount">Pkt</span></div>'+rows.map((r,i)=>`<div class="rankrow"><span class="ranknum">${i+1}</span><span>${esc(r.nickname||'Bez nicku')} <span class="rankbadge">${esc(r.rank_name||'Debiutant')}</span><small style="display:block;color:#9fc7bb">🎯 ${r.exact_scores} • typy ${r.picks_count}</small></span><span class="rankcount"><b>${r.points}</b></span></div>`).join('')}async function showTab(t){
   const m=t==='matches',l=t==='live',r=t==='ranking',a=t==='admin';
   $('matchesView').classList.toggle('hidden',!m);
   $('liveView').classList.toggle('hidden',!l);
@@ -40,5 +51,5 @@ async function loadRanking(){const{data,error}=await db.rpc('full_ranking');if(e
   $('tabAdmin').classList.toggle('active',a);
   if(l){await loadResults();renderLive()}
   if(r)await loadRanking();
-  if(a)await loadAdmin();
+  if(a){await loadAdmin();await loadAdminUsers();}
 }document.querySelectorAll('.filters button').forEach(b=>b.onclick=()=>{filter=b.dataset.f;document.querySelectorAll('.filters button').forEach(x=>x.classList.toggle('active',x===b));render()});(async()=>{const{data}=await db.auth.getSession();if(data.session)await enter(data.session.user)})();setInterval(async()=>{if(!user)return;await loadResults();if(!$('matchesView').classList.contains('hidden'))render();if(!$('liveView').classList.contains('hidden'))renderLive()},10000);
