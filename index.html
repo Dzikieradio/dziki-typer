@@ -1,499 +1,176 @@
 <!DOCTYPE html>
 <html lang="pl">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Dziki Typer</title>
-
-<style>
-*{box-sizing:border-box}
-body{
- margin:0;
- font-family:Arial,sans-serif;
- background:#061b12;
- color:#fff
-}
-header{
- background:linear-gradient(135deg,#08783e,#05552e);
- text-align:center;
- padding:28px 15px;
- border-bottom:4px solid #29dc82
-}
-header h1{margin:0;font-size:36px}
-header p{margin:10px 0 0;color:#d5f3e3;font-size:17px}
-.container{max-width:750px;margin:auto;padding:18px}
-.filters{
- display:flex;gap:8px;overflow-x:auto;
- padding:10px 0 18px
-}
-.filter{
- flex:0 0 auto;
- border:1px solid #297451;
- background:#10291e;
- color:#eee;
- padding:12px 16px;
- border-radius:24px;
- font-weight:bold;
- font-size:15px
-}
-.filter.active{background:#20c871}
-h2{font-size:28px;margin:20px 0}
-.league-title{
- color:#55df98;
- font-size:18px;
- font-weight:bold;
- margin:28px 5px 13px
-}
-.match{
- background:#112d21;
- border:1px solid #286046;
- border-radius:18px;
- padding:17px;
- margin-bottom:16px
-}
-.date{
- text-align:center;
- color:#a4d4bb;
- font-size:15px;
- margin-bottom:18px
-}
-.teams{
- display:grid;
- grid-template-columns:1fr 45px 1fr;
- align-items:center;
- gap:5px
-}
-.team{text-align:center;font-weight:bold;font-size:17px;line-height:1.25}
-.crest{
- width:50px;height:50px;
- border-radius:50%;
- background:#183c2c;
- border:1px solid #36795a;
- margin:0 auto 8px;
- display:flex;align-items:center;justify-content:center;
- font-size:25px
-}
-.vs{text-align:center;color:#809d8e;font-weight:bold}
-.score{
- display:flex;justify-content:center;align-items:center;
- gap:10px;margin-top:18px
-}
-.score input{
- width:65px;height:52px;
- border:2px solid #31845f;
- background:#061b12;
- color:#fff;
- border-radius:12px;
- text-align:center;
- font-size:22px
-}
-.save{
- width:100%;
- border:0;
- border-radius:12px;
- background:#20c871;
- color:#fff;
- padding:14px;
- font-size:17px;
- font-weight:bold;
- margin-top:15px
-}
-.save:disabled{
- background:#40594d;
- color:#b5c1bb
-}
-.status{
- text-align:center;
- margin-top:10px;
- font-size:14px;
- color:#61efa8
-}
-.locked{color:#ffbf69}
-.pause{
- background:#0d261b;
- border:1px dashed #376c52;
- border-radius:13px;
- padding:13px;
- text-align:center;
- color:#a7c8b7;
- margin-bottom:15px
-}
-.rules{
- margin-top:30px;
- background:#10291e;
- border:1px solid #285a43;
- border-radius:16px;
- padding:18px;
- line-height:1.8
-}
-footer{
- text-align:center;
- color:#779b89;
- padding:35px 10px
-}
-.hidden{display:none}
-</style>
-</head>
-
-<body>
-
-<header>
- <h1>⚽ Dziki Typer</h1>
- <p>Powiat żywiecki • sezon 2026/2027</p>
-</header>
-
-<main class="container">
-
-<div class="filters">
- <button class="filter active" data-filter="all">Wszystkie</button>
- <button class="filter" data-filter="okregowa">Okręgówka</button>
- <button class="filter" data-filter="a">A Klasa</button>
- <button class="filter" data-filter="b">B Klasa</button>
-</div>
-
-<h2>🔥 Najbliższa kolejka</h2>
-
-<div id="matches"></div>
-
-<div class="rules">
- <strong>🏆 Zasady punktacji</strong><br><br>
- 🎯 Dokładny wynik – <strong>3 pkt</strong><br>
- ✅ Poprawny zwycięzca lub remis – <strong>1 pkt</strong><br>
- ❌ Nietrafiony typ – <strong>0 pkt</strong><br><br>
- 🔒 Typowanie zostaje zablokowane w chwili rozpoczęcia meczu.
-</div>
-
-</main>
-
-<footer>
- ⚽ Dziki Typer<br>
- Dziki Radio • Powiat żywiecki
-</footer>
-
-<script>
-
-const matches=[
-
-/* OKRĘGÓWKA */
-
-{
- id:"o1",league:"okregowa",
- home:"GKS Radziechowy-Wieprz",
- away:"LKS Pogórze",
- date:"26.09.2026",time:"16:00",
- kickoff:"2026-09-26T16:00:00"
-},
-{
- id:"o2",league:"okregowa",
- home:"LKS Ślemień",
- away:"Wisła Strumień",
- date:"27.09.2026",time:"17:00",
- kickoff:"2026-09-27T17:00:00"
-},
-{
- id:"o3",league:"okregowa",
- home:"LKS Słotwina",
- away:"Bory Pietrzykowice",
- date:"27.09.2026",time:"15:00",
- kickoff:"2026-09-27T15:00:00"
-},
-{
- id:"o4",league:"okregowa",
- home:"Cukrownik Chybie",
- away:"Victoria Hażlach",
- date:"26.09.2026",time:"16:00",
- kickoff:"2026-09-26T16:00:00"
-},
-{
- id:"o5",league:"okregowa",
- home:"LKS Leśna",
- away:"Podhalanka Milówka",
- date:"27.09.2026",time:"15:00",
- kickoff:"2026-09-27T15:00:00"
-},
-{
- id:"o6",league:"okregowa",
- home:"Orzeł Łękawica",
- away:"Maksymilian Cisiec",
- date:"26.09.2026",time:"16:00",
- kickoff:"2026-09-26T16:00:00"
-},
-{
- id:"o7",league:"okregowa",
- home:"Strażak Dębowiec",
- away:"WSS Wisła",
- date:"26.09.2026",time:"16:00",
- kickoff:"2026-09-26T16:00:00"
-},
-
-/* A KLASA */
-
-{
- id:"a1",league:"a",
- home:"GKS II Radziechowy-Wieprz",
- away:"Skałka Żabnica",
- date:"27.09.2026",time:"11:00",
- kickoff:"2026-09-27T11:00:00"
-},
-{
- id:"a2",league:"a",
- home:"Magórka Czernichów",
- away:"Soła Rajcza",
- date:"27.09.2026",time:"11:00",
- kickoff:"2026-09-27T11:00:00"
-},
-{
- id:"a3",league:"a",
- home:"LKS Sopotnia",
- away:"Magura Bystra",
- date:"26.09.2026",time:"16:30",
- kickoff:"2026-09-26T16:30:00"
-},
-{
- id:"a4",league:"a",
- home:"Grapa Trzebinia",
- away:"Świt Cięcina",
- date:"26.09.2026",time:"16:00",
- kickoff:"2026-09-26T16:00:00"
-},
-{
- id:"a5",league:"a",
- home:"Stal-Śrubiarnia II Żywiec",
- away:"Czarni-Góral Żywiec",
- date:"Termin do potwierdzenia",
- time:"",
- kickoff:null
-},
-{
- id:"a6",league:"a",
- home:"Beskid Gilowice",
- away:"Skrzyczne Lipowa",
- date:"27.09.2026",time:"15:00",
- kickoff:"2026-09-27T15:00:00"
-},
-
-/* B KLASA */
-
-{
- id:"b1",league:"b",
- home:"Jeleśnianka Jeleśnia",
- away:"LKS Korbielów",
- date:"27.09.2026",time:"11:00",
- kickoff:"2026-09-27T11:00:00"
-},
-{
- id:"b2",league:"b",
- home:"GAPN Świnna",
- away:"LKS Pewel Ślemieńska",
- date:"26.09.2026",time:"13:30",
- kickoff:"2026-09-26T13:30:00"
-},
-{
- id:"b3",league:"b",
- home:"Soła Żywiec",
- away:"Halny Przyborów",
- date:"27.09.2026",time:"11:00",
- kickoff:"2026-09-27T11:00:00"
-},
-{
- id:"b4",league:"b",
- home:"Jezioro Żywieckie Zarzecze",
- away:"Orzeł II Łękawica",
- date:"26.09.2026",time:"15:00",
- kickoff:"2026-09-26T15:00:00"
-}
-
-];
-
-const leagueNames={
- okregowa:"🏆 LIGA OKRĘGOWA SKOCZÓW–ŻYWIEC",
- a:"⚽ A KLASA ŻYWIEC",
- b:"⚽ B KLASA ŻYWIEC"
-};
-
-const pauses={
- a:"⏸ Pauzuje: Koszarawa Żywiec",
- b:"⏸ Pauzuje: LKS II Sopotnia"
-};
-
-let currentFilter="all";
-
-function loadPicks(){
- try{
-  return JSON.parse(localStorage.getItem("dzikiTyperPicksV3"))||{};
- }catch(e){
-  return {};
- }
-}
-
-function savePick(id){
-
- const match=matches.find(m=>m.id===id);
-
- if(match.kickoff && new Date()>=new Date(match.kickoff)){
-  alert("Typowanie tego meczu zostało zakończone.");
-  return;
- }
-
- const home=document.getElementById(id+"h").value;
- const away=document.getElementById(id+"a").value;
-
- if(home===""||away===""){
-  alert("Wpisz oba wyniki.");
-  return;
- }
-
- if(Number(home)<0||Number(away)<0){
-  alert("Wynik nie może być ujemny.");
-  return;
- }
-
- const picks=loadPicks();
-
- picks[id]={
-  home:Number(home),
-  away:Number(away)
- };
-
- localStorage.setItem(
-  "dzikiTyperPicksV3",
-  JSON.stringify(picks)
- );
-
- document.getElementById("status-"+id).textContent=
- "✓ Typ zapisany: "+home+" : "+away;
-}
-
-function matchHTML(m){
-
- const picks=loadPicks();
- const pick=picks[m.id];
-
- const locked=
-  m.kickoff &&
-  new Date()>=new Date(m.kickoff);
-
- const disabled=locked?"disabled":"";
-
- let status="";
-
- if(locked){
-  status='<div class="status locked">🔒 Typowanie zakończone</div>';
- }else if(pick){
-  status='<div class="status" id="status-'+m.id+
-  '">✓ Typ zapisany: '+pick.home+' : '+pick.away+'</div>';
- }else{
-  status='<div class="status" id="status-'+m.id+'"></div>';
- }
-
- return `
- <div class="match">
-   <div class="date">
-    📅 ${m.date}${m.time ? " • ⏰ "+m.time : ""}
-   </div>
-
-   <div class="teams">
-
-    <div class="team">
-     <div class="crest">⚽</div>
-     ${m.home}
-    </div>
-
-    <div class="vs">VS</div>
-
-    <div class="team">
-     <div class="crest">⚽</div>
-     ${m.away}
-    </div>
-
-   </div>
-
-   <div class="score">
-    <input
-     id="${m.id}h"
-     type="number"
-     min="0"
-     inputmode="numeric"
-     value="${pick ? pick.home : ""}"
-     ${disabled}
-    >
-    <strong>:</strong>
-    <input
-     id="${m.id}a"
-     type="number"
-     min="0"
-     inputmode="numeric"
-     value="${pick ? pick.away : ""}"
-     ${disabled}
-    >
-   </div>
-
-   <button
-    class="save"
-    onclick="savePick('${m.id}')"
-    ${disabled}>
-    ${locked ? "🔒 Typowanie zakończone" : "Zapisz typ"}
-   </button>
-
-   ${status}
-
- </div>`;
-}
-
-function render(){
-
- const container=document.getElementById("matches");
- container.innerHTML="";
-
- ["okregowa","a","b"].forEach(league=>{
-
-  if(currentFilter!=="all" && currentFilter!==league) return;
-
-  const group=matches.filter(m=>m.league===league);
-
-  const section=document.createElement("section");
-
-  section.innerHTML=
-   `<div class="league-title">${leagueNames[league]}</div>`;
-
-  group.forEach(m=>{
-   section.innerHTML+=matchHTML(m);
-  });
-
-  if(pauses[league]){
-   section.innerHTML+=
-    `<div class="pause">${pauses[league]}</div>`;
-  }
-
-  container.appendChild(section);
-
- });
-
-}
-
-document.querySelectorAll(".filter").forEach(button=>{
-
- button.addEventListener("click",()=>{
-
-  document.querySelectorAll(".filter")
-   .forEach(b=>b.classList.remove("active"));
-
-  button.classList.add("active");
-
-  currentFilter=button.dataset.filter;
-
-  render();
-
- });
-
-});
-
-render();
-
-/* odśwież blokady co minutę */
-setInterval(render,60000);
-
-</script>
-
-</body>
-</html>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dziki Typer</title>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <style>
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #001d16;
+      color: white;
+    }
+
+    header {
+      text-align: center;
+      padding: 35px 15px;
+      background: linear-gradient(135deg,#00843d,#00652f);
+      border-bottom: 4px solid #20d987;
+    }
+
+    header h1 {
+      font-size: 38px;
+      margin: 0 0 10px;
+    }
+
+    header p {
+      margin: 0;
+      font-size: 18px;
+      opacity: .9;
+    }
+
+    .container {
+      max-width: 760px;
+      margin: auto;
+      padding: 25px 16px 50px;
+    }
+
+    .auth-box {
+      max-width: 450px;
+      margin: 20px auto;
+      background: #0b3528;
+      border: 1px solid #246c51;
+      border-radius: 22px;
+      padding: 24px;
+    }
+
+    .auth-box h2 {
+      text-align: center;
+      margin-top: 0;
+      font-size: 28px;
+    }
+
+    .auth-box input {
+      width: 100%;
+      padding: 15px;
+      margin: 7px 0;
+      border-radius: 12px;
+      border: 1px solid #318263;
+      background: #001d16;
+      color: white;
+      font-size: 16px;
+    }
+
+    button {
+      border: 0;
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    .main-btn {
+      width: 100%;
+      padding: 15px;
+      margin-top: 10px;
+      border-radius: 12px;
+      background: #20cf78;
+      color: white;
+      font-size: 17px;
+    }
+
+    .secondary-btn {
+      width: 100%;
+      padding: 14px;
+      margin-top: 10px;
+      border-radius: 12px;
+      background: transparent;
+      color: #37df93;
+      border: 1px solid #37df93;
+      font-size: 16px;
+    }
+
+    .message {
+      margin-top: 15px;
+      text-align: center;
+      line-height: 1.4;
+    }
+
+    .userbar {
+      background: #0b3528;
+      border: 1px solid #246c51;
+      padding: 14px;
+      border-radius: 15px;
+      margin-bottom: 20px;
+      text-align: center;
+    }
+
+    .logout {
+      margin-top: 10px;
+      padding: 8px 18px;
+      border-radius: 10px;
+      background: #163f33;
+      color: white;
+      border: 1px solid #37df93;
+    }
+
+    .filters {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding: 5px 0 20px;
+    }
+
+    .filter {
+      flex: 0 0 auto;
+      padding: 12px 18px;
+      border-radius: 30px;
+      background: transparent;
+      color: white;
+      border: 1px solid #246c51;
+    }
+
+    .filter.active {
+      background: #20cf78;
+    }
+
+    h2.title {
+      font-size: 30px;
+      margin: 25px 0;
+    }
+
+    .league-title {
+      color: #45df9a;
+      font-size: 20px;
+      margin: 25px 5px 15px;
+      font-weight: bold;
+    }
+
+    .match {
+      background: #0b3528;
+      border: 1px solid #246c51;
+      border-radius: 22px;
+      padding: 20px;
+      margin-bottom: 18px;
+    }
+
+    .date {
+      text-align: center;
+      color: #b7d0c6;
+      margin-bottom: 20px;
+    }
+
+    .teams {
+      display: grid;
+      grid-template-columns: 1fr 40px 1fr;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .team {
+      text-align: center;
+      font-weight: bold
