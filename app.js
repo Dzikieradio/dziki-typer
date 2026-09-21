@@ -38,9 +38,38 @@ async function loadAdminUsers(){
     const finished=r.finished_count??r.finished_picks??0;
     const points=r.points??0, exact=r.exact_scores??0, count=r.picks_count??0;
     const mine=r.user_id===user.id;
-    return `<div class="usercard"><div class="usercardTop"><div><b>${esc(r.nickname||'Bez nicku')}</b><small>${esc(r.email||'')}</small></div><span class="badge">${esc(rank)}</span></div><div class="userstats"><span>${points} pkt</span><span>🎯 ${exact}</span><span>${finished} rozliczonych</span><span>${count} typów</span></div>${mine?'<small class="muted">Konto administratora</small>':`<button onclick="adminDeleteUser('${r.user_id}','${esc(r.email||r.nickname||'użytkownika')}')">🗑 Usuń użytkownika</button>`}</div>`;
+    return `<div class="usercard"><div class="usercardTop"><div><b>${esc(r.nickname||'Bez nicku')}</b><small>${esc(r.email||'')}</small></div><span class="badge">${esc(rank)}</span></div><div class="userstats"><span>${points} pkt</span><span>🎯 ${exact}</span><span>${finished} rozliczonych</span><span>${count} typów</span></div><button onclick="adminUserPicks('${r.user_id}','${esc(r.nickname||r.email||'Użytkownik')}')">📊 Typy</button>${mine?'<small class="muted">Konto administratora</small>':`<button onclick="adminDeleteUser('${r.user_id}','${esc(r.email||r.nickname||'użytkownika')}')">🗑 Usuń użytkownika</button>`}</div>`;
   }).join(''):'Brak użytkowników.';
 }
+async function adminUserPicks(id,label){
+  const{data,error}=await db.rpc('admin_user_picks',{p_user_id:id});
+  if(error){alert('Nie udało się pobrać typów: '+error.message);return}
+  const rows=data||[];
+  let box=$('adminPickHistory');
+  if(!box){
+    box=document.createElement('div');
+    box.id='adminPickHistory';
+    box.className='panel';
+    $('adminUsers').before(box);
+  }
+  const matchName=id=>{
+    const m=MATCHES.find(x=>x.id===id);
+    return m?`${esc(m.home)} — ${esc(m.away)}`:esc(id);
+  };
+  box.innerHTML=`<div style="display:flex;justify-content:space-between;gap:8px;align-items:center"><h3 style="margin:0">📊 Typy: ${esc(label)}</h3><button onclick="$('adminPickHistory').remove()">✕</button></div>`+
+    (rows.length?rows.map(r=>{
+      const finished=r.status==='finished';
+      let verdict='<span class="muted">⏳ Oczekuje</span>';
+      if(finished){
+        const exact=Number(r.pick_home)===Number(r.result_home)&&Number(r.pick_away)===Number(r.result_away);
+        const outcome=Math.sign(Number(r.pick_home)-Number(r.pick_away))===Math.sign(Number(r.result_home)-Number(r.result_away));
+        verdict=exact?'🎯 +3 pkt':outcome?'✅ +1 pkt':'❌ 0 pkt';
+      }
+      return `<div style="padding:12px 0;border-bottom:1px solid rgba(255,255,255,.12)"><b>${matchName(r.match_id)}</b><div>Typ: <b>${r.pick_home}:${r.pick_away}</b>${finished?` • Wynik: <b>${r.result_home}:${r.result_away}</b>`:''}</div><div>${verdict}</div></div>`;
+    }).join(''):'<p class="muted">Brak zapisanych typów.</p>');
+  box.scrollIntoView({behavior:'smooth',block:'start'});
+}
+
 async function adminDeleteUser(id,label){
   if(!confirm(`Usunąć konto ${label}? Tej operacji nie można cofnąć.`))return;
   const{error}=await db.rpc('admin_delete_user',{p_user_id:id});
