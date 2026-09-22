@@ -185,11 +185,12 @@ async function loadChat(){
   if(!box)return;
   const [{data:msgs,error},{data:looks}]=await Promise.all([
     db.from('chat_messages').select('id,user_id,message,created_at').order('created_at',{ascending:false}).limit(100),
-    db.rpc('public_profile_looks')
+    db.from('profiles').select('id,nickname,avatar')
   ]);
   if(error){box.innerHTML='<div class="warn">❌ Nie udało się pobrać czatu: '+esc(error.message)+'</div>';return}
   const lookMap={};
   (looks||[]).forEach(x=>{if(x.id)lookMap[x.id]=x});
+  if(profile?.id)lookMap[profile.id]=profile;
   const rows=(msgs||[]).slice().reverse();
   box.innerHTML=rows.length?rows.map(m=>{
     const p=lookMap[m.user_id]||{};
