@@ -48,3 +48,26 @@ button{border:0;border-radius:11px;background:var(--accent);color:#111;font-weig
 .rankingPodium{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;margin:18px 0 22px}.podiumCard{background:linear-gradient(180deg,#181d23,#12161b);border:1px solid #343c46;border-radius:16px;padding:13px 8px;text-align:center;min-width:0}.podium1{border-color:var(--accent);box-shadow:inset 0 0 24px rgba(241,181,28,.08)}.podiumPlace{font-size:14px;font-weight:900;margin-bottom:8px}.podiumAvatar{font-size:34px}.podiumNick{font-weight:900;margin:7px 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.podiumCard .rankbadge{margin:0;font-size:10px;padding:4px 6px}.podiumStats{display:grid;grid-template-columns:1fr 1fr;border-top:1px solid var(--line);margin-top:10px;padding-top:9px}.podiumStats span{display:flex;flex-direction:column}.podiumStats b{font-size:18px}.podiumStats small{color:var(--muted);font-size:10px}
 .rankingTable{overflow-x:auto;border:1px solid var(--line);border-radius:14px}.rankingLine{display:grid;grid-template-columns:34px minmax(145px,1fr) 48px 48px 104px;gap:6px;align-items:center;padding:11px 10px;border-bottom:1px solid var(--line);min-width:430px}.rankingLine:last-child{border-bottom:0}.rankingHeader{background:#1d232a;color:var(--muted);font-size:12px;font-weight:800}.rankingPlace{font-weight:900;font-size:17px}.rankingPlayer{display:flex;align-items:center;gap:8px;min-width:0}.rankingAvatar{font-size:24px}.rankingPlayer>span:last-child{min-width:0}.rankingPlayer b{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.rankingPlayer small{display:block;color:#9fc7bb;font-size:10px;margin-top:3px}.rankingPicks,.rankingPoints{text-align:center;font-weight:900}.rankingPoints{font-size:17px}.rankingRank{text-align:right}.rankingRank .rankbadge{margin:0;font-size:10px;padding:5px 7px;white-space:nowrap}.rankingFooter{text-align:center;color:var(--muted);font-size:11px;margin-top:12px}.rankingEmpty{text-align:center;color:var(--muted);padding:28px 8px}
 @media(max-width:430px){.rankingPodium{gap:6px}.podiumCard{padding:11px 5px}.podiumAvatar{font-size:29px}.podiumNick{font-size:12px}.podiumStats b{font-size:16px}}
+
+
+/* DZIKI TYPER — dashboard navigation v1 */
+.brand-center h1{font-weight:950;letter-spacing:.4px}
+.brand-center h1 span{color:var(--accent)}
+.brand-center p{font-weight:700;letter-spacing:.35px}
+.userbar{background:linear-gradient(135deg,#151b22,#10151b);border:1px solid #303945;border-radius:18px;padding:13px 14px;margin:0 0 16px}
+.profileLink{background:transparent!important;color:#fff!important;padding:4px!important;font-size:18px!important;text-align:left}
+.dashboardNav{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;overflow:visible;padding:0 0 18px}
+.dashboardNav button{position:relative;display:grid;grid-template-columns:1fr auto;grid-template-rows:auto 1fr;min-width:0;min-height:132px;padding:16px;text-align:left;background:linear-gradient(145deg,#171e25,#10161c);color:#fff;border:1px solid #303a45;border-radius:18px;box-shadow:0 9px 22px rgba(0,0,0,.18)}
+.dashboardNav button.active{background:linear-gradient(145deg,#3a3017,#181a1d);color:#fff;border:2px solid var(--accent);box-shadow:inset 0 0 28px rgba(241,181,28,.10),0 9px 22px rgba(0,0,0,.2)}
+.navIcon{grid-column:1;font-size:34px;line-height:1;align-self:start;position:relative}.navCopy{grid-column:1;align-self:end;min-width:0}.navCopy b{display:block;font-size:17px;font-weight:950;line-height:1.05;letter-spacing:.2px}.navCopy small{display:block;color:#9ca8b6;font-size:10px;font-weight:800;line-height:1.25;margin-top:7px}.navArrow{grid-column:2;grid-row:1/3;align-self:center;font-size:34px;font-weight:300;color:#dce2e9}.navBell em{position:absolute;right:-10px;top:-9px;display:flex;align-items:center;justify-content:center;min-width:23px;height:23px;padding:0 5px;border-radius:99px;background:#ee2947;color:#fff;font-size:11px;font-style:normal;font-weight:900;border:2px solid #171e25}
+.localBanner{display:grid;grid-template-columns:auto 1fr auto;gap:15px;align-items:center;background:linear-gradient(135deg,#151b22,#0e1318);border:1px solid #303945;border-radius:18px;padding:17px 18px;margin:20px 0 2px}.localBars{color:var(--accent);font-size:24px;letter-spacing:-7px;transform:rotate(180deg)}.localBanner b{display:block;font-size:15px}.localBanner small{display:block;color:var(--muted);font-size:10px;margin-top:5px}.localBanner strong{color:var(--accent);font-family:cursive;font-size:19px;transform:rotate(-4deg);white-space:nowrap}
+@media(max-width:520px){
+ .dashboardNav{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+ .dashboardNav button{min-height:116px;padding:13px}
+ .navIcon{font-size:29px}.navCopy b{font-size:15px}.navCopy small{font-size:9px}.navArrow{font-size:29px}
+ .brand-center h1{font-size:27px}
+ .localBanner{grid-template-columns:auto 1fr;padding:14px}.localBanner strong{grid-column:1/-1;text-align:right;font-size:18px}
+}
+@media(max-width:360px){
+ .dashboardNav button{min-height:108px;padding:11px}.navCopy b{font-size:14px}.navCopy small{font-size:8px}
+}
