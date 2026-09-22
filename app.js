@@ -328,3 +328,100 @@ async function showTab(t){
   if(n)await loadNotifications();
   if(a){await loadAdmin();await loadAdminUsers();}
 }document.querySelectorAll('.filters button').forEach(b=>b.onclick=()=>{filter=b.dataset.f;document.querySelectorAll('.filters button').forEach(x=>x.classList.toggle('active',x===b));render()});(async()=>{const{data}=await db.auth.getSession();if(data.session)await enter(data.session.user)})();setInterval(async()=>{if(!user)return;await loadResults();if(!$('matchesView').classList.contains('hidden'))render();if(!$('liveView').classList.contains('hidden'))renderLive();await loadNotifications();if(!$('chatView').classList.contains('hidden'))await loadChat()},10000);
+/* =========================================================
+   DZIKI TYPER — ATRAKCJE KOLEJKI v1
+   HIT kolejki • Pojedynek tygodnia • Podsumowanie kolejki
+   ========================================================= */
+let weekFeature=null;
+
+function weekMatchLabel(id){
+  const m=MATCHES.find(x=>x.id===id);
+  return m?`${m.home} — ${m.away}`:id||'—';
+}
+function ensureWeekUI(){
+  const nav=document.querySelector('.dashboardNav');
+  if(nav&&!$('tabWeek')){
+    const b=document.createElement('button');
+    b.id='tabWeek'; b.type='button'; b.onclick=()=>showTab('week');
+    b.innerHTML='<span class="navIcon">🔥</span><span class="navCopy"><b>KOLEJKA</b><small>HIT • pojedynek • podsumowanie</small></span><span class="navArrow">›</span>';
+    nav.appendChild(b);
+  }
+  if(!$('weekView')){
+    const v=document.createElement('section'); v.id='weekView'; v.className='hidden';
+    v.innerHTML='<div class="weekHero"><span>🔥 DZIKI TYPER</span><h2>Atrakcje kolejki</h2><p>HIT kolejki, pojedynek tygodnia i najważniejsze liczby w jednym miejscu.</p></div><div id="weekContent"><div class="panel">Ładowanie…</div></div>';
+    const anchor=$('adminView')||$('app').lastElementChild; anchor.before(v);
+  }
+  if(isAdmin&&$('adminView')&&!$('adminWeekPanel')){
+    const p=document.createElement('div'); p.id='adminWeekPanel'; p.className='panel adminWeekPanel';
+    p.innerHTML='<div class="adminWeekHead"><div><span class="eyebrow">🔥 ATRAKCJE KOLEJKI</span><h2>HIT i pojedynek tygodnia</h2></div></div><p class="muted">Wybierz mecz wyróżniony jako HIT oraz dwóch typerów do pojedynku. Podsumowanie policzy się automatycznie z zakończonych spotkań.</p><label class="adminWeekLabel">Nazwa kolejki<input id="weekTitle" maxlength="60" placeholder="np. Weekend 26–27 września"></label><label class="adminWeekLabel">🔥 HIT kolejki<select id="weekHit"></select></label><div class="adminWeekDuel"><label>⚔️ Typer 1<select id="weekDuelA"></select></label><label>⚔️ Typer 2<select id="weekDuelB"></select></label></div><button onclick="saveWeekFeature()">💾 Zapisz atrakcje kolejki</button><div id="weekAdminMsg" class="saved"></div>';
+    const target=$('adminMatchesSection')||$('adminView'); target.prepend(p);
+  }
+}
+
+async function loadWeekFeature(){
+  ensureWeekUI();
+  const{data,error}=await db.rpc('current_week_feature');
+  if(error){
+    if($('weekContent'))$('weekContent').innerHTML='<div class="panel warn">⚠️ Moduł kolejki wymaga uruchomienia pliku SQL z paczki.</div>';
+    return;
+  }
+  weekFeature=Array.isArray(data)?data[0]:data;
+  renderWeekFeature();
+  if(isAdmin)renderWeekAdmin();
+}
+
+function renderWeekFeature(){
+  const box=$('weekContent'); if(!box)return;
+  const w=weekFeature;
+  if(!w||!w.id){box.innerHTML='<div class="panel weekEmpty">🔥 Administrator jeszcze nie ustawił atrakcji tej kolejki.</div>';return}
+  const hit=MATCHES.find(m=>m.id===w.hit_match_id), hr=hit?results[hit.id]:null;
+  const hitScore=hr&&hr.status!=='scheduled'?`<strong>${hr.home_score??0} : ${hr.away_score??0}</strong>`:'<strong>VS</strong>';
+  const a=w.duel_a_nickname||'Typer 1', b=w.duel_b_nickname||'Typer 2';
+  const ap=Number(w.duel_a_points||0), bp=Number(w.duel_b_points||0);
+  const duelState=Number(w.finished_matches||0)===0?'Pojedynek ruszy po zakończeniu pierwszego meczu':ap===bp?'Na razie remis':`${ap>bp?a:b} prowadzi`;
+  const winner=w.winner_nickname?`<div class="summaryWinner"><span>👑 TYPER KOLEJKI</span><b>${esc(w.winner_nickname)}</b><small>${Number(w.winner_points||0)} pkt • 🎯 ${Number(w.winner_exact||0)} dokładnych</small></div>`:'<div class="summaryWinner waiting"><span>🏆 PODSUMOWANIE</span><b>Jeszcze gramy</b><small>Wyniki pojawią się po zakończeniu spotkań.</small></div>';
+  box.innerHTML=`<div class="weekHit"><div class="weekTag">🔥 HIT KOLEJKI</div><div class="weekHitTeams"><span>${esc(hit?.home||'Nie wybrano')}</span>${hitScore}<span>${esc(hit?.away||'meczu')}</span></div>${hit?`<small>🗓 ${esc(hit.label)}</small>`:''}</div>
+  <div class="weekDuelCard"><div class="weekTag">⚔️ POJEDYNEK TYGODNIA</div><div class="duelBoard"><div><b>${esc(a)}</b><strong>${ap}</strong><small>pkt</small></div><span>VS</span><div><b>${esc(b)}</b><strong>${bp}</strong><small>pkt</small></div></div><p>${esc(duelState)}</p></div>
+  <div class="weekSummary"><div class="weekTag">🏆 PODSUMOWANIE KOLEJKI</div>${winner}<div class="summaryStats"><span><b>${Number(w.finished_matches||0)}</b><small>zakończonych meczów</small></span><span><b>${Number(w.total_picks||0)}</b><small>rozliczonych typów</small></span><span><b>${Number(w.exact_picks||0)}</b><small>dokładnych wyników</small></span></div></div>`;
+}
+
+function renderWeekAdmin(){
+  ensureWeekUI(); if(!$('weekHit'))return;
+  const matchOpts='<option value="">— wybierz mecz —</option>'+MATCHES.map(m=>`<option value="${esc(m.id)}">${esc(m.home)} — ${esc(m.away)} • ${esc(m.label)}</option>`).join('');
+  $('weekHit').innerHTML=matchOpts;
+  const users=adminUsersCache||[];
+  const userOpts='<option value="">— wybierz typera —</option>'+users.map(r=>`<option value="${esc(r.user_id)}">${esc(r.nickname||r.email||'Użytkownik')}</option>`).join('');
+  $('weekDuelA').innerHTML=userOpts; $('weekDuelB').innerHTML=userOpts;
+  if(weekFeature){
+    $('weekTitle').value=weekFeature.title||'';
+    $('weekHit').value=weekFeature.hit_match_id||'';
+    $('weekDuelA').value=weekFeature.duel_user_a||'';
+    $('weekDuelB').value=weekFeature.duel_user_b||'';
+  }
+}
+
+async function saveWeekFeature(){
+  if(!isAdmin)return;
+  const title=$('weekTitle').value.trim()||'Aktualna kolejka',hit=$('weekHit').value,a=$('weekDuelA').value,b=$('weekDuelB').value;
+  if(!hit){alert('Wybierz HIT kolejki.');return}
+  if(!a||!b){alert('Wybierz dwóch typerów do pojedynku.');return}
+  if(a===b){alert('W pojedynku muszą być dwie różne osoby.');return}
+  const ids=MATCHES.map(m=>m.id);
+  const{error}=await db.rpc('admin_set_week_feature',{p_title:title,p_hit_match_id:hit,p_duel_user_a:a,p_duel_user_b:b,p_match_ids:ids});
+  if(error){alert('Nie udało się zapisać: '+error.message);return}
+  $('weekAdminMsg').textContent='✓ Atrakcje kolejki zapisane.';
+  await loadWeekFeature();
+}
+
+const _oldLoadAdminUsers=loadAdminUsers;
+loadAdminUsers=async function(){await _oldLoadAdminUsers(); if(isAdmin){ensureWeekUI();renderWeekAdmin();}};
+const _oldEnter=enter;
+enter=async function(u){await _oldEnter(u);ensureWeekUI();await loadWeekFeature();};
+const _oldShowTab=showTab;
+showTab=async function(t){
+  if(t!=='week')return _oldShowTab(t);
+  ['matchesView','liveView','rankingView','chatView','notificationsView','adminView'].forEach(id=>$(id)?.classList.add('hidden'));
+  ['tabMatches','tabLive','tabRanking','tabChat','tabNotifications','tabAdmin'].forEach(id=>$(id)?.classList.remove('active'));
+  ensureWeekUI();$('weekView').classList.remove('hidden');$('tabWeek')?.classList.add('active');
+  await loadResults();await loadWeekFeature();
+};
