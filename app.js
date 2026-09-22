@@ -1,4 +1,4 @@
-const U='https://kfysmqwhpzemoknqakzn.supabase.co',K='sb_publishable_UNdKtQ2mCMaaWcMK0FvVIA_r8cNIUl-';const db=supabase.createClient(U,K);const $=id=>document.getElementById(id);let user=null,picks={},filter='all',profile=null,isAdmin=false,results={};const names={okregowa:'Liga Okręgowa Skoczów–Żywiec • kolejka 8',a:'A Klasa Żywiec • kolejka 7',b:'B Klasa Żywiec • kolejka 7'};async function login(){message.textContent='Logowanie...';const{data,error}=await db.auth.signInWithPassword({email:email.value.trim(),password:password.value});if(error){message.textContent='❌ '+error.message;return}await enter(data.user)}async function register(){
+const U='https://kfysmqwhpzemoknqakzn.supabase.co',K='sb_publishable_UNdKtQ2mCMaaWcMK0FvVIA_r8cNIUl-';const db=supabase.createClient(U,K);const $=id=>document.getElementById(id);let user=null,picks={},filter='all',profile=null,isAdmin=false,results={},adminMatchFilter='all',adminUsersCache=[];const names={okregowa:'Liga Okręgowa Skoczów–Żywiec • kolejka 8',a:'A Klasa Żywiec • kolejka 7',b:'B Klasa Żywiec • kolejka 7'};async function login(){message.textContent='Logowanie...';const{data,error}=await db.auth.signInWithPassword({email:email.value.trim(),password:password.value});if(error){message.textContent='❌ '+error.message;return}await enter(data.user)}async function register(){
  const n=$('regNickname').value.trim();
  if(n.length<2){message.textContent='❌ Wpisz nick (minimum 2 znaki).';return}
  if(n.length>30){message.textContent='❌ Nick może mieć maksymalnie 30 znaków.';return}
@@ -34,11 +34,38 @@ async function checkAdmin(){
 async function loadAdmin(){
   if(!isAdmin)return;
   await loadResults();
-  $('adminMatches').innerHTML=MATCHES.map(m=>{
+  const list=MATCHES.filter(m=>adminMatchFilter==='all'||(results[m.id]?.status||'scheduled')===adminMatchFilter);
+  $('adminMatchCount').textContent=String(MATCHES.length);
+  $('adminMatches').innerHTML=list.length?list.map(m=>{
     const r=results[m.id]||{status:'scheduled'};
-    return `<div class="adminmatch"><div class="adminteams">${m.home}<br>— ${m.away}</div><div class="date">${m.label}</div><div class="adminstatus"><select id="rs-${m.id}"><option value="scheduled" ${r.status==='scheduled'?'selected':''}>Przed meczem</option><option value="live" ${r.status==='live'?'selected':''}>🔴 Na żywo</option><option value="finished" ${r.status==='finished'?'selected':''}>Koniec</option></select><input id="rm-${m.id}" class="minute" type="number" min="1" max="130" inputmode="numeric" placeholder="min" value="${r.minute??''}"></div><div class="adminscore"><input id="rh-${m.id}" type="number" min="0" inputmode="numeric" value="${r.home_score??''}"><span>:</span><input id="ra-${m.id}" type="number" min="0" inputmode="numeric" value="${r.away_score??''}"><button onclick="saveResult('${m.id}')">Zapisz</button></div></div>`;
-  }).join('');
+    const status=r.status||'scheduled';
+    const label=status==='live'?'🔴 LIVE':status==='finished'?'✓ Zakończony':'◷ Przed meczem';
+    const score=status==='scheduled'?'—':`${r.home_score??0} : ${r.away_score??0}`;
+    return `<div class="adminMatchRow" data-status="${status}"><button class="adminMatchSummary" onclick="toggleAdminMatch('${m.id}')"><span class="adminMatchMain"><b>${esc(m.home)} — ${esc(m.away)}</b><small>🗓 ${esc(m.label)}</small></span><span class="adminMatchResult"><strong>${score}</strong><em class="statusPill ${status}">${label}</em></span><span class="adminChevron" id="ac-${m.id}">⌄</span></button><div id="ae-${m.id}" class="adminMatchEdit hidden"><div class="adminEditGrid"><label>Status<select id="rs-${m.id}"><option value="scheduled" ${status==='scheduled'?'selected':''}>Przed meczem</option><option value="live" ${status==='live'?'selected':''}>🔴 Na żywo</option><option value="finished" ${status==='finished'?'selected':''}>Koniec</option></select></label><label>Minuta<input id="rm-${m.id}" class="minute" type="number" min="1" max="130" inputmode="numeric" placeholder="min" value="${r.minute??''}"></label></div><div class="adminScoreEdit"><input id="rh-${m.id}" type="number" min="0" inputmode="numeric" value="${r.home_score??''}" placeholder="0"><span>:</span><input id="ra-${m.id}" type="number" min="0" inputmode="numeric" value="${r.away_score??''}" placeholder="0"><button onclick="saveResult('${m.id}')">💾 Zapisz</button></div></div></div>`;
+  }).join(''):'<div class="adminEmpty">Brak meczów w tym filtrze.</div>';
 }
+function adminSection(name){
+  const matches=name==='matches';
+  $('adminMatchesSection').classList.toggle('hidden',!matches);
+  $('adminUsersSection').classList.toggle('hidden',matches);
+  $('adminNavMatches').classList.toggle('active',matches);
+  $('adminNavUsers').classList.toggle('active',!matches);
+  if(matches)loadAdmin(); else loadAdminUsers();
+}
+function toggleAdminMatch(id){
+  const box=$('ae-'+id),chev=$('ac-'+id); if(!box)return;
+  const opening=box.classList.contains('hidden');
+  document.querySelectorAll('.adminMatchEdit').forEach(x=>x.classList.add('hidden'));
+  document.querySelectorAll('.adminChevron').forEach(x=>x.textContent='⌄');
+  if(opening){box.classList.remove('hidden');if(chev)chev.textContent='⌃'}
+}
+function setAdminMatchFilter(value,btn){
+  adminMatchFilter=value;
+  document.querySelectorAll('.adminFilters button').forEach(b=>b.classList.toggle('active',b===btn));
+  loadAdmin();
+}
+async function refreshAdminDashboard(){await loadAdmin();await loadAdminUsers();}
+
 async function saveResult(id){
   if(!isAdmin)return;
   const status=$('rs-'+id).value;
@@ -64,14 +91,19 @@ async function loadAdminUsers(){
   if(!isAdmin)return;
   const{data,error}=await db.rpc('admin_users');
   if(error){$('adminUsers').innerHTML='<div class="warn">❌ '+esc(error.message)+'</div>';return}
-  const rows=data||[];
-  $('adminUsers').innerHTML=rows.length?rows.map(r=>{
-    const finished=r.finished_count??r.finished_picks??0;
-    const rank=autoRank(r.points,r.exact_scores,finished);
-    const points=r.points??0, exact=r.exact_scores??0, count=r.picks_count??0;
-    const mine=r.user_id===user.id;
-    return `<div class="usercard"><div class="usercardTop"><div><b>${esc(r.nickname||'Bez nicku')}</b><small>${esc(r.email||'')}</small></div><span class="badge">${esc(rank)}</span></div><div class="userstats"><span>${points} pkt</span><span>🎯 ${exact}</span><span>${finished} rozliczonych</span><span>${count} typów</span></div><button onclick="adminUserPicks('${r.user_id}','${esc(r.nickname||r.email||'Użytkownik')}')">📊 Typy</button><button onclick="adminEditUser('${r.user_id}','${esc(r.nickname||'')}')">✏️ Edytuj użytkownika</button>${mine?'<small class="muted">Konto administratora</small>':`<button onclick="adminDeleteUser('${r.user_id}','${esc(r.email||r.nickname||'użytkownika')}')">🗑 Usuń użytkownika</button>`}</div>`;
-  }).join(''):'Brak użytkowników.';
+  adminUsersCache=data||[];
+  if($('adminUserCount'))$('adminUserCount').textContent=String(adminUsersCache.length);
+  renderAdminUsers();
+}
+function renderAdminUsers(){
+  const box=$('adminUsers'); if(!box)return;
+  const q=($('adminUserSearch')?.value||'').trim().toLowerCase();
+  const rows=adminUsersCache.filter(r=>!q||String(r.nickname||'').toLowerCase().includes(q)||String(r.email||'').toLowerCase().includes(q));
+  box.innerHTML=rows.length?rows.map(r=>{
+    const finished=r.finished_count??r.finished_picks??0, rank=autoRank(r.points,r.exact_scores,finished);
+    const points=r.points??0, exact=r.exact_scores??0, count=r.picks_count??0, mine=r.user_id===user.id;
+    return `<div class="adminUserRow"><div class="adminUserTop"><div class="adminUserIdentity"><span class="adminAvatar">👤</span><span><b>${esc(r.nickname||'Bez nicku')}</b><small>${esc(r.email||'')}</small></span></div><span class="badge">${esc(rank)}</span></div><div class="adminUserStats"><span><b>${points}</b><small>pkt</small></span><span><b>🎯 ${exact}</b><small>dokładnych</small></span><span><b>${finished}</b><small>rozliczonych</small></span><span><b>${count}</b><small>typów</small></span></div><div class="adminUserActions"><button onclick="adminUserPicks('${r.user_id}','${esc(r.nickname||r.email||'Użytkownik')}')">📊 Typy</button><button onclick="adminEditUser('${r.user_id}','${esc(r.nickname||'')}')">✏️ Edytuj</button>${mine?'<span class="adminSelf">Administrator</span>':`<button class="dangerGhost" onclick="adminDeleteUser('${r.user_id}','${esc(r.email||r.nickname||'użytkownika')}')">🗑</button>`}</div></div>`;
+  }).join(''):'<div class="adminEmpty">Nie znaleziono użytkownika.</div>';
 }
 async function adminUserPicks(id,label){
   const{data,error}=await db.rpc('admin_user_picks',{p_user_id:id});
