@@ -152,3 +152,43 @@ button{border:0;border-radius:11px;background:var(--accent);color:#111;font-weig
   .adminUserActions .dangerGhost{grid-column:1/-1;width:100%}
   .adminSelf{grid-column:1/-1;text-align:left}
 }
+
+/* =========================================================
+   HOTFIX v3 — kontrast tekstu kart meczów administratora
+   Samsung/Chrome: wymuszenie jasnego tekstu wewnątrz buttona
+   ========================================================= */
+#adminView #adminMatches .adminMatchRow .adminMatchSummary,
+#adminView #adminMatches .adminMatchRow .adminMatchSummary *{
+  opacity:1!important;
+}
+#adminView #adminMatches .adminMatchRow .adminMatchSummary .adminMatchMain,
+#adminView #adminMatches .adminMatchRow .adminMatchSummary .adminMatchMain b{
+  color:#ffffff!important;
+  -webkit-text-fill-color:#ffffff!important;
+}
+#adminView #adminMatches .adminMatchRow .adminMatchSummary .adminMatchMain b{
+  font-weight:900!important;
+  text-shadow:0 1px 2px rgba(0,0,0,.55)!important;
+}
+#adminView #adminMatches .adminMatchRow .adminMatchSummary .adminMatchMain small{
+  color:#c8d1dc!important;
+  -webkit-text-fill-color:#c8d1dc!important;
+  font-weight:700!important;
+}
+#adminView #adminMatches .adminMatchRow .adminMatchSummary .adminMatchResult strong,
+#adminView #adminMatches .adminMatchRow .adminMatchSummary .adminChevron{
+  color:#f5f7fa!important;
+  -webkit-text-fill-color:#f5f7fa!important;
+}
+#adminView #adminMatches .adminMatchRow .adminMatchSummary .statusPill.scheduled{
+  color:#ffc52f!important;
+  -webkit-text-fill-color:#ffc52f!important;
+}
+#adminView #adminMatches .adminMatchRow .adminMatchSummary .statusPill.live{
+  color:#ff8585!important;
+  -webkit-text-fill-color:#ff8585!important;
+}
+#adminView #adminMatches .adminMatchRow .adminMatchSummary .statusPill.finished{
+  color:#8de1b8!important;
+  -webkit-text-fill-color:#8de1b8!important;
+}
