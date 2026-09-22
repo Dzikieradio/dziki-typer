@@ -264,7 +264,19 @@ async function markAllNotificationsRead(){
   await loadNotifications();
 }
 
-async function loadRanking(){const[{data,error},{data:looks}]=await Promise.all([db.rpc('full_ranking'),db.rpc('public_profile_looks')]);const lookMap={};(looks||[]).forEach(x=>lookMap[x.nickname]=x);if(error){$('ranking').textContent='Nie udało się pobrać rankingu.';return}const rows=data||[];$('ranking').innerHTML='<div class="rankrow rankhead"><span>#</span><span>Gracz</span><span class="rankcount">Pkt</span></div>'+rows.map((r,i)=>`<div class="rankrow"><span class="ranknum">${i+1}</span><span>${esc(lookMap[r.nickname]?.avatar||'👤')} ${esc(r.nickname||'Bez nicku')} <span class="rankbadge">${esc(autoRank(r.points,r.exact_scores,r.finished_count??r.finished_picks??0))}</span><small style="display:block;color:#9fc7bb">🎯 ${r.exact_scores} • typy ${r.picks_count}</small></span><span class="rankcount"><b>${r.points}</b></span></div>`).join('')}async function showTab(t){
+async function loadRanking(){
+ const[{data,error},{data:looks}]=await Promise.all([db.rpc('full_ranking'),db.rpc('public_profile_looks')]);
+ if(error){$('ranking').textContent='Nie udało się pobrać rankingu.';return}
+ const lm={};(looks||[]).forEach(x=>lm[x.nickname]=x);
+ const rows=(data||[]).slice(0,50);
+ if(!rows.length){$('ranking').innerHTML='<div class="rankingEmpty">Ranking jest jeszcze pusty.</div>';return}
+ const rk=r=>autoRank(r.points,r.exact_scores,r.finished_count??r.finished_picks??0), av=r=>lm[r.nickname]?.avatar||'👤';
+ const top=rows.slice(0,3);
+ const podium=`<div class="rankingPodium">${top.map((r,i)=>`<div class="podiumCard podium${i+1}"><div class="podiumPlace">${i===0?'🥇':i===1?'🥈':'🥉'} ${i+1}</div><div class="podiumAvatar">${esc(av(r))}</div><div class="podiumNick">${esc(r.nickname||'Bez nicku')}</div><span class="rankbadge">${esc(rk(r))}</span><div class="podiumStats"><span><b>${Number(r.picks_count||0)}</b><small>typów</small></span><span><b>${Number(r.points||0)}</b><small>pkt</small></span></div></div>`).join('')}</div>`;
+ const list=rows.map((r,i)=>`<div class="rankingLine"><span class="rankingPlace">${i+1}</span><span class="rankingPlayer"><span class="rankingAvatar">${esc(av(r))}</span><span><b>${esc(r.nickname||'Bez nicku')}</b><small>🎯 ${Number(r.exact_scores||0)} dokładnych</small></span></span><span class="rankingPicks">${Number(r.picks_count||0)}</span><span class="rankingPoints">${Number(r.points||0)}</span><span class="rankingRank"><span class="rankbadge">${esc(rk(r))}</span></span></div>`).join('');
+ $('ranking').innerHTML=`${podium}<div class="rankingTable"><div class="rankingLine rankingHeader"><span>#</span><span>Gracz</span><span>Typy</span><span>Pkt</span><span>Ranga</span></div>${list}</div><div class="rankingFooter">👥 Ranking pokazuje maksymalnie 50 graczy.</div>`;
+}
+async function showTab(t){
   const m=t==='matches',l=t==='live',r=t==='ranking',c=t==='chat',n=t==='notifications',a=t==='admin';
   $('matchesView').classList.toggle('hidden',!m);
   $('liveView').classList.toggle('hidden',!l);
