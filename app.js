@@ -25,7 +25,7 @@ async function ensureNickname(u,fallback=''){
 async function logout(){await db.auth.signOut();location.reload()}async function loadProfile(){const{data,error}=await db.from('profiles').select('id,nickname,avatar,favorite_club').eq('id',user.id).maybeSingle();profile=data||null;const nick=profile?.nickname||user.user_metadata?.nickname||user.email;if($('nicknameBox'))$('nicknameBox').classList.add('hidden');$('userInfo').innerHTML=`<button class="profileLink" onclick="showMyProfile()">${esc(profile?.avatar||'👤')} ${esc(nick)}</button>`}async function saveNickname(){const n=$('nickname').value.trim();if(n.length<2){$('nickMsg').textContent='Nick musi mieć co najmniej 2 znaki.';return}const{error}=await db.from('profiles').upsert({id:user.id,nickname:n});if(error){$('nickMsg').textContent=error.code==='23505'?'Ten nick jest już zajęty.':'❌ '+error.message;return}$('nickMsg').textContent='';await loadProfile();await loadRanking()}function locked(m){return m.kickoff&&Date.now()>=new Date(m.kickoff).getTime()}async function enter(u){user=u;const nickOk=await ensureNickname(u);if(!nickOk)return;$('auth').classList.add('hidden');$('app').classList.remove('hidden');await loadProfile();await loadPicks();await loadResults();await checkAdmin();await loadNotifications();render()}async function loadPicks(){const{data,error}=await db.from('picks').select('match_id,home_score,away_score').eq('user_id',user.id);if(error){$('status').innerHTML='<div class="warn">⚠️ Nie udało się pobrać typów.</div>';return}picks={};(data||[]).forEach(p=>picks[p.match_id]=p)}async function savePick(id){const m=MATCHES.find(x=>x.id===id);if(locked(m))return;const h=Number($('h-'+id).value),a=Number($('a-'+id).value);if(!Number.isInteger(h)||!Number.isInteger(a)||h<0||a<0){alert('Wpisz oba wyniki jako liczby 0 lub większe.');return}const{error}=await db.from('picks').upsert({user_id:user.id,match_id:id,home_score:h,away_score:a},{onConflict:'user_id,match_id'});if(error){alert('Nie udało się zapisać: '+error.message);return}picks[id]={match_id:id,home_score:h,away_score:a};render()}function resultBadge(m){const r=results[m.id];if(!r||r.status==='scheduled')return '';if(r.status==='live')return `<div class="resultline live"><span>🔴 NA ŻYWO${r.minute?` • ${r.minute}'`:''}</span><b>${r.home_score??0} : ${r.away_score??0}</b></div>`;if(r.status==='finished')return `<div class="resultline finished"><span>KONIEC</span><b>${r.home_score} : ${r.away_score}</b></div>`;return ''}
 function card(m){const p=picks[m.id],isLocked=locked(m),disabled=isLocked?'disabled':'';return `<div class="match">${resultBadge(m)}<div class="teams">${m.home}<br><span class="versus">—</span> ${m.away}</div><div class="date">🗓 ${m.label}</div><div class="score"><input id="h-${m.id}" type="number" min="0" inputmode="numeric" value="${p?.home_score??''}" ${disabled}><span>:</span><input id="a-${m.id}" type="number" min="0" inputmode="numeric" value="${p?.away_score??''}" ${disabled}><button class="save" onclick="savePick('${m.id}')" ${disabled}>Zapisz</button></div>${isLocked?'<div class="locked">🔒 Typowanie zamknięte</div>':p?'<div class="saved">✓ Typ zapisany online</div>':''}</div>`}
 async function loadResults(){const{data,error}=await db.from('match_results').select('match_id,home_score,away_score,status,minute,updated_at');if(error)return;results={};(data||[]).forEach(r=>results[r.match_id]=r)}
-function renderLive(){const active=MATCHES.filter(m=>results[m.id]?.status==='live');const finished=MATCHES.filter(m=>results[m.id]?.status==='finished');let html='';if(active.length){html+=active.map(m=>{const r=results[m.id];const p=picks[m.id];return `<div class="livecard"><div class="liveMeta"><span class="livePill">● LIVE${r.minute?` • ${r.minute}'`:''}</span><span>${m.label}</span></div><div class="liveTeams"><span>${m.home}</span><b>${r.home_score??0} : ${r.away_score??0}</b><span>${m.away}</span></div>${p?`<div class="yourPick">Twój typ: <b>${p.home_score} : ${p.away_score}</b></div>`:''}</div>`}).join('')}else html+='<div class="emptyLive">Teraz nie trwa żaden mecz.</div>';if(finished.length){html+='<h3 class="recentTitle">Ostatnio zakończone</h3>'+finished.slice(0,6).map(m=>{const r=results[m.id];return `<div class="finishedRow"><span>${m.home} – ${m.away}</span><b>${r.home_score} : ${r.away_score}</b></div>`}).join('')}$('liveMatches').innerHTML=html}function render(){let html='';['okregowa','a','b'].forEach(l=>{if(filter!=='all'&&filter!==l)return;const ms=MATCHES.filter(m=>m.league===l);if(ms.length)html+=`<h3 class="league">${names[l]}</h3>`+ms.map(card).join('')});$('matches').innerHTML=html}
+function renderLive(){const active=MATCHES.filter(m=>results[m.id]?.status==='live');const finished=MATCHES.filter(m=>results[m.id]?.status==='finished');let html='';if(active.length){html+=active.map(m=>{const r=results[m.id];const p=picks[m.id];return `<div class="livecard"><div class="liveMeta"><span class="livePill">● LIVE${r.minute?` • ${r.minute}'`:''}</span><span>${m.label}</span></div><div class="liveTeams"><span>${m.home}</span><b>${r.home_score??0} : ${r.away_score??0}</b><span>${m.away}</span></div>${p?`<div class="yourPick">Twój typ: <b>${p.home_score} : ${p.away_score}</b></div>`:''}</div>`}).join('')}else html+='<div class="emptyLive">Teraz nie trwa żaden mecz.</div>';if(finished.length){html+='<h3 class="recentTitle">Ostatnio zakończone</h3>'+finished.slice(0,6).map(m=>{const r=results[m.id];return `<div class="finishedRow"><span>${m.home} – ${m.away}</span><b>${r.home_score} : ${r.away_score}</b></div>`}).join('')}$('liveMatches').innerHTML=html}function render(){let html='';['okregowa','a','b'].forEach(l=>{if(filter!=='all'&&filter!==l)return;const ms=MATCHES.filter(m=>m.league===l);if(ms.length)html+=`<h3 class="league">${names[l]}</h3>`+ms.map(card).join('')});if(filter==='all'){const cms=MATCHES.filter(m=>m._custom);const groups={};cms.forEach(m=>(groups[m.competition]??=[]).push(m));Object.entries(groups).forEach(([title,ms])=>html+=`<h3 class="league">🏆 ${esc(title)}</h3>`+ms.map(card).join(''));}$('matches').innerHTML=html}
 async function checkAdmin(){
   const{data,error}=await db.rpc('is_admin');
   isAdmin=!error&&data===true;
@@ -41,7 +41,7 @@ async function loadAdmin(){
     const status=r.status||'scheduled';
     const label=status==='live'?'🔴 LIVE':status==='finished'?'✓ Zakończony':'◷ Przed meczem';
     const score=status==='scheduled'?'—':`${r.home_score??0} : ${r.away_score??0}`;
-    return `<div class="adminMatchRow" data-status="${status}"><button class="adminMatchSummary" onclick="toggleAdminMatch('${m.id}')"><span class="adminMatchMain"><b>${esc(m.home)} — ${esc(m.away)}</b><small>🗓 ${esc(m.label)}</small></span><span class="adminMatchResult"><strong>${score}</strong><em class="statusPill ${status}">${label}</em></span><span class="adminChevron" id="ac-${m.id}">⌄</span></button><div id="ae-${m.id}" class="adminMatchEdit hidden"><div class="adminEditGrid"><label>Status<select id="rs-${m.id}"><option value="scheduled" ${status==='scheduled'?'selected':''}>Przed meczem</option><option value="live" ${status==='live'?'selected':''}>🔴 Na żywo</option><option value="finished" ${status==='finished'?'selected':''}>Koniec</option></select></label><label>Minuta<input id="rm-${m.id}" class="minute" type="number" min="1" max="130" inputmode="numeric" placeholder="min" value="${r.minute??''}"></label></div><div class="adminScoreEdit"><input id="rh-${m.id}" type="number" min="0" inputmode="numeric" value="${r.home_score??''}" placeholder="0"><span>:</span><input id="ra-${m.id}" type="number" min="0" inputmode="numeric" value="${r.away_score??''}" placeholder="0"><button onclick="saveResult('${m.id}')">💾 Zapisz</button></div></div></div>`;
+    return `<div class="adminMatchRow" data-status="${status}"><button class="adminMatchSummary" onclick="toggleAdminMatch('${m.id}')"><span class="adminMatchMain"><b>${esc(m.home)} — ${esc(m.away)}</b><small>🗓 ${esc(m.label)}</small></span><span class="adminMatchResult"><strong>${score}</strong><em class="statusPill ${status}">${label}</em></span><span class="adminChevron" id="ac-${m.id}">⌄</span></button><div id="ae-${m.id}" class="adminMatchEdit hidden"><div class="adminEditGrid"><label>Status<select id="rs-${m.id}"><option value="scheduled" ${status==='scheduled'?'selected':''}>Przed meczem</option><option value="live" ${status==='live'?'selected':''}>🔴 Na żywo</option><option value="finished" ${status==='finished'?'selected':''}>Koniec</option></select></label><label>Minuta<input id="rm-${m.id}" class="minute" type="number" min="1" max="130" inputmode="numeric" placeholder="min" value="${r.minute??''}"></label></div><div class="adminScoreEdit"><input id="rh-${m.id}" type="number" min="0" inputmode="numeric" value="${r.home_score??''}" placeholder="0"><span>:</span><input id="ra-${m.id}" type="number" min="0" inputmode="numeric" value="${r.away_score??''}" placeholder="0"><button onclick="saveResult('${m.id}')">💾 Zapisz</button></div>${m._custom?`<div class="customMatchActions"><button onclick="editCustomMatch(${Number(m._customId)})">✏️ Edytuj mecz</button><button class="dangerGhost" onclick="deleteCustomMatch(${Number(m._customId)})">🗑 Usuń mecz</button></div>`:''}</div></div>`;
   }).join(''):'<div class="adminEmpty">Brak meczów w tym filtrze.</div>';
 }
 function adminSection(name){
@@ -326,8 +326,108 @@ async function showTab(t){
   if(r)await loadRanking();
   if(c)await loadChat();
   if(n)await loadNotifications();
-  if(a){await loadAdmin();await loadAdminUsers();}
+  if(a){ensureCustomMatchAdminUI();await loadAdmin();await loadAdminUsers();}
 }document.querySelectorAll('.filters button').forEach(b=>b.onclick=()=>{filter=b.dataset.f;document.querySelectorAll('.filters button').forEach(x=>x.classList.toggle('active',x===b));render()});(async()=>{const{data}=await db.auth.getSession();if(data.session)await enter(data.session.user)})();setInterval(async()=>{if(!user)return;await loadResults();if(!$('matchesView').classList.contains('hidden'))render();if(!$('liveView').classList.contains('hidden'))renderLive();await loadNotifications();if(!$('chatView').classList.contains('hidden'))await loadChat()},10000);
+
+/* =========================================================
+   DZIKI TYPER — DODATKOWE MECZE ADMINA v1
+   Puchar Polski • sparingi • inne rozgrywki
+   ========================================================= */
+let customMatchesCache=[];
+
+function customMatchId(id){return `custom-${Number(id)}`}
+
+function customDateLabel(kickoff){
+  if(!kickoff)return 'Termin do potwierdzenia';
+  const d=new Date(kickoff);
+  return d.toLocaleString('pl-PL',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
+}
+
+async function loadCustomMatches(){
+  const{data,error}=await db.from('custom_matches').select('id,competition,home_team,away_team,kickoff,created_at').order('kickoff',{ascending:true});
+  if(error){console.warn('custom_matches:',error.message);return}
+  customMatchesCache=data||[];
+  for(let i=MATCHES.length-1;i>=0;i--)if(MATCHES[i]?._custom)MATCHES.splice(i,1);
+  customMatchesCache.forEach(x=>MATCHES.push({
+    id:customMatchId(x.id),
+    league:'custom',
+    home:x.home_team,
+    away:x.away_team,
+    kickoff:x.kickoff,
+    label:customDateLabel(x.kickoff),
+    competition:x.competition,
+    _custom:true,
+    _customId:x.id
+  }));
+  names.custom='Dodatkowe mecze';
+}
+
+function ensureCustomMatchAdminUI(){
+  if(!isAdmin||!$('adminMatchesSection')||$('customMatchAdmin'))return;
+  const box=document.createElement('div');
+  box.id='customMatchAdmin'; box.className='customMatchAdmin';
+  box.innerHTML=`<div class="customMatchHead"><div><span class="eyebrow">➕ NOWY MECZ</span><h3>Dodaj dodatkowe spotkanie</h3></div></div>
+  <p class="muted">Puchar Polski, sparing lub inne rozgrywki. Po zapisaniu mecz od razu pojawi się w typowaniu.</p>
+  <div class="customMatchGrid">
+    <label>Rozgrywki<input id="cmCompetition" maxlength="80" placeholder="np. Puchar Polski"></label>
+    <label>Gospodarz<input id="cmHome" maxlength="100" placeholder="Nazwa gospodarza"></label>
+    <label>Gość<input id="cmAway" maxlength="100" placeholder="Nazwa gościa"></label>
+    <label>Data i godzina<input id="cmKickoff" type="datetime-local"></label>
+  </div>
+  <button class="customAddBtn" onclick="addCustomMatch()">➕ DODAJ MECZ</button>
+  <div id="customMatchMsg" class="saved"></div>`;
+  const head=$('adminMatchesSection').querySelector('.adminSectionHead');
+  if(head)head.after(box); else $('adminMatchesSection').prepend(box);
+}
+
+async function addCustomMatch(){
+  if(!isAdmin)return;
+  const competition=$('cmCompetition').value.trim(),home=$('cmHome').value.trim(),away=$('cmAway').value.trim(),raw=$('cmKickoff').value;
+  if(!competition||!home||!away||!raw){alert('Uzupełnij rozgrywki, gospodarza, gościa oraz datę i godzinę.');return}
+  if(home.toLowerCase()===away.toLowerCase()){alert('Gospodarz i gość muszą być różnymi drużynami.');return}
+  const kickoff=new Date(raw);
+  if(Number.isNaN(kickoff.getTime())){alert('Podaj prawidłową datę i godzinę.');return}
+  const{error}=await db.from('custom_matches').insert({competition,home_team:home,away_team:away,kickoff:kickoff.toISOString()});
+  if(error){alert('Nie udało się dodać meczu: '+error.message);return}
+  $('customMatchMsg').textContent='✓ Mecz został dodany.';
+  ['cmCompetition','cmHome','cmAway','cmKickoff'].forEach(id=>$(id).value='');
+  await refreshCustomMatches();
+}
+
+async function editCustomMatch(id){
+  if(!isAdmin)return;
+  const x=customMatchesCache.find(m=>Number(m.id)===Number(id)); if(!x)return;
+  const competition=prompt('Rozgrywki:',x.competition); if(competition===null)return;
+  const home=prompt('Gospodarz:',x.home_team); if(home===null)return;
+  const away=prompt('Gość:',x.away_team); if(away===null)return;
+  const current=x.kickoff?new Date(new Date(x.kickoff).getTime()-new Date(x.kickoff).getTimezoneOffset()*60000).toISOString().slice(0,16):'';
+  const raw=prompt('Data i godzina (RRRR-MM-DDTHH:MM):',current); if(raw===null)return;
+  if(!competition.trim()||!home.trim()||!away.trim()||!raw.trim()){alert('Wszystkie pola są wymagane.');return}
+  const kickoff=new Date(raw); if(Number.isNaN(kickoff.getTime())){alert('Nieprawidłowa data lub godzina.');return}
+  const{error}=await db.from('custom_matches').update({competition:competition.trim(),home_team:home.trim(),away_team:away.trim(),kickoff:kickoff.toISOString()}).eq('id',id);
+  if(error){alert('Nie udało się zapisać zmian: '+error.message);return}
+  await refreshCustomMatches();
+}
+
+async function deleteCustomMatch(id){
+  if(!isAdmin)return;
+  const x=customMatchesCache.find(m=>Number(m.id)===Number(id)); if(!x)return;
+  if(!confirm(`Usunąć mecz ${x.home_team} — ${x.away_team}? Typy i wynik tego meczu również zostaną usunięte.`))return;
+  const{error}=await db.rpc('admin_delete_custom_match',{p_custom_id:Number(id)});
+  if(error){alert('Nie udało się usunąć meczu: '+error.message);return}
+  await refreshCustomMatches();
+}
+
+async function refreshCustomMatches(){
+  await loadCustomMatches();
+  await loadPicks();
+  await loadResults();
+  render();
+  renderLive();
+  if(isAdmin){ensureCustomMatchAdminUI();await loadAdmin();}
+  if($('weekHit'))renderWeekAdmin();
+}
+
 /* =========================================================
    DZIKI TYPER — ATRAKCJE KOLEJKI v1
    HIT kolejki • Pojedynek tygodnia • Podsumowanie kolejki
@@ -416,7 +516,7 @@ async function saveWeekFeature(){
 const _oldLoadAdminUsers=loadAdminUsers;
 loadAdminUsers=async function(){await _oldLoadAdminUsers(); if(isAdmin){ensureWeekUI();renderWeekAdmin();}};
 const _oldEnter=enter;
-enter=async function(u){await _oldEnter(u);ensureWeekUI();await loadWeekFeature();};
+enter=async function(u){await loadCustomMatches();await _oldEnter(u);ensureCustomMatchAdminUI();ensureWeekUI();await loadWeekFeature();};
 const _oldShowTab=showTab;
 showTab=async function(t){
   if(t!=='week')return _oldShowTab(t);
