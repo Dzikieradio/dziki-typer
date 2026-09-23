@@ -584,7 +584,7 @@ async function saveWeekFeature(){
 const _oldLoadAdminUsers=loadAdminUsers;
 loadAdminUsers=async function(){await _oldLoadAdminUsers(); if(isAdmin){ensureWeekUI();renderWeekAdmin();}};
 const _oldEnter=enter;
-enter=async function(u){await loadCustomMatches();await _oldEnter(u);ensureCustomMatchAdminUI();ensureWeekUI();await loadWeekFeature();};
+enter=async function(u){await loadCustomMatches();await _oldEnter(u);ensureCustomMatchAdminUI();ensureWeekUI();ensureRadioButton();await loadWeekFeature();};
 const _oldShowTab=showTab;
 showTab=async function(t){
   if(t!=='week')return _oldShowTab(t);
@@ -594,6 +594,19 @@ showTab=async function(t){
   await loadResults();await loadWeekFeature();
 };
 
+
+/* DZIKI TYPER — SŁUCHAJ DZIKIE RADIO v1 */
+const DZIKI_RADIO_PAGE='http://51.255.8.139:11250/index.html';
+function ensureRadioButton(){
+ if($('dzikiRadioBtn'))return;
+ const btn=document.createElement('a');
+ btn.id='dzikiRadioBtn';btn.className='dzikiRadioBtn';
+ btn.href=DZIKI_RADIO_PAGE;btn.target='_blank';btn.rel='noopener';
+ btn.innerHTML='<span class="radioIcon">📻</span><span><b>▶ SŁUCHAJ DZIKIE RADIO</b><small>Otwórz radio</small></span>';
+ const badge=$('onlineBadge'),info=$('userInfo');
+ if(badge)badge.after(btn);else if(info)info.after(btn);else ($('app')||document.body).prepend(btn);
+}
+
 (function(){const s=document.createElement('style');s.textContent=`.goalEvents{margin:8px 0 12px;padding:8px 10px;border-radius:10px;background:rgba(255,255,255,.04)}.goalEvents div{display:grid;grid-template-columns:auto 1fr auto;gap:8px;padding:4px 0}.goalEvents small{opacity:.7}.goalAdmin{margin-top:14px;padding-top:12px;border-top:1px solid rgba(255,255,255,.1)}.goalAdd{display:grid;grid-template-columns:1fr 1fr 70px;gap:7px}.goalAdd button{grid-column:1/-1}.goalAdminList>div{display:flex;justify-content:space-between;padding:7px 0}@media(max-width:600px){.goalAdd{grid-template-columns:1fr 80px}.goalAdd select{grid-column:1/-1}}`;document.head.appendChild(s)})();
 
 (function(){const s=document.createElement('style');s.textContent=`
@@ -602,4 +615,9 @@ showTab=async function(t){
 .adminOnlinePanel{margin-bottom:16px}.adminOnlineHead{display:flex;align-items:center;justify-content:space-between;gap:12px}
 .adminOnlineHead h3{margin:3px 0 10px}.adminOnlineHead>strong{font-size:28px}
 .onlineUserRow{display:flex;align-items:center;gap:8px;padding:9px 0;border-top:1px solid rgba(255,255,255,.08)}
+`;document.head.appendChild(s)})();
+
+(function(){const s=document.createElement('style');s.textContent=`
+.dzikiRadioBtn{display:flex;align-items:center;gap:10px;width:max-content;max-width:100%;margin:10px 0 4px;padding:10px 14px;border:1px solid rgba(245,181,27,.45);border-radius:14px;background:rgba(245,181,27,.10);color:inherit;text-decoration:none}
+.dzikiRadioBtn .radioIcon{font-size:24px}.dzikiRadioBtn span:last-child{display:flex;flex-direction:column;gap:2px}.dzikiRadioBtn b{color:#f5b51b;font-size:14px}.dzikiRadioBtn small{opacity:.7;font-size:11px}
 `;document.head.appendChild(s)})();
