@@ -1,4 +1,4 @@
-const U='https://kfysmqwhpzemoknqakzn.supabase.co',K='sb_publishable_UNdKtQ2mCMaaWcMK0FvVIA_r8cNIUl-';const db=supabase.createClient(U,K);const $=id=>document.getElementById(id);let user=null,picks={},filter='all',profile=null,isAdmin=false,results={},adminMatchFilter='all',adminUsersCache=[];const names={okregowa:'Liga Okręgowa Skoczów–Żywiec • kolejka 8',a:'A Klasa Żywiec • kolejka 7',b:'B Klasa Żywiec • kolejka 7'};async function login(){message.textContent='Logowanie...';const{data,error}=await db.auth.signInWithPassword({email:email.value.trim(),password:password.value});if(error){message.textContent='❌ '+error.message;return}await enter(data.user)}async function register(){
+const U='https://kfysmqwhpzemoknqakzn.supabase.co',K='sb_publishable_UNdKtQ2mCMaaWcMK0FvVIA_r8cNIUl-';const db=supabase.createClient(U,K);const $=id=>document.getElementById(id);let user=null,picks={},filter='all',profile=null,isAdmin=false,results={},goalEvents={},adminMatchFilter='all',adminUsersCache=[];const names={okregowa:'Liga Okręgowa Skoczów–Żywiec • kolejka 8',a:'A Klasa Żywiec • kolejka 7',b:'B Klasa Żywiec • kolejka 7'};async function login(){message.textContent='Logowanie...';const{data,error}=await db.auth.signInWithPassword({email:email.value.trim(),password:password.value});if(error){message.textContent='❌ '+error.message;return}await enter(data.user)}async function register(){
  const n=$('regNickname').value.trim();
  if(n.length<2){message.textContent='❌ Wpisz nick (minimum 2 znaki).';return}
  if(n.length>30){message.textContent='❌ Nick może mieć maksymalnie 30 znaków.';return}
@@ -22,7 +22,7 @@ async function ensureNickname(u,fallback=''){
  if(error){alert(error.code==='23505'?'Ten nick jest już zajęty. Wybierz inny nick.':'Nie udało się zapisać nicku: '+error.message);return false}
  return true;
 }
-async function logout(){await db.auth.signOut();location.reload()}async function loadProfile(){const{data,error}=await db.from('profiles').select('id,nickname,avatar,favorite_club').eq('id',user.id).maybeSingle();profile=data||null;const nick=profile?.nickname||user.user_metadata?.nickname||user.email;if($('nicknameBox'))$('nicknameBox').classList.add('hidden');$('userInfo').innerHTML=`<button class="profileLink" onclick="showMyProfile()">${esc(profile?.avatar||'👤')} ${esc(nick)}</button>`}async function saveNickname(){const n=$('nickname').value.trim();if(n.length<2){$('nickMsg').textContent='Nick musi mieć co najmniej 2 znaki.';return}const{error}=await db.from('profiles').upsert({id:user.id,nickname:n});if(error){$('nickMsg').textContent=error.code==='23505'?'Ten nick jest już zajęty.':'❌ '+error.message;return}$('nickMsg').textContent='';await loadProfile();await loadRanking()}function locked(m){return m.kickoff&&Date.now()>=new Date(m.kickoff).getTime()}async function enter(u){user=u;const nickOk=await ensureNickname(u);if(!nickOk)return;$('auth').classList.add('hidden');$('app').classList.remove('hidden');await loadProfile();await loadPicks();await loadResults();await checkAdmin();await loadNotifications();render()}async function loadPicks(){const{data,error}=await db.from('picks').select('match_id,home_score,away_score').eq('user_id',user.id);if(error){$('status').innerHTML='<div class="warn">⚠️ Nie udało się pobrać typów.</div>';return}picks={};(data||[]).forEach(p=>picks[p.match_id]=p)}async function savePick(id){const m=MATCHES.find(x=>x.id===id);if(locked(m))return;const h=Number($('h-'+id).value),a=Number($('a-'+id).value);if(!Number.isInteger(h)||!Number.isInteger(a)||h<0||a<0){alert('Wpisz oba wyniki jako liczby 0 lub większe.');return}const{error}=await db.from('picks').upsert({user_id:user.id,match_id:id,home_score:h,away_score:a},{onConflict:'user_id,match_id'});if(error){alert('Nie udało się zapisać: '+error.message);return}picks[id]={match_id:id,home_score:h,away_score:a};render()}function liveMinute(r){
+async function logout(){await db.auth.signOut();location.reload()}async function loadProfile(){const{data,error}=await db.from('profiles').select('id,nickname,avatar,favorite_club').eq('id',user.id).maybeSingle();profile=data||null;const nick=profile?.nickname||user.user_metadata?.nickname||user.email;if($('nicknameBox'))$('nicknameBox').classList.add('hidden');$('userInfo').innerHTML=`<button class="profileLink" onclick="showMyProfile()">${esc(profile?.avatar||'👤')} ${esc(nick)}</button>`}async function saveNickname(){const n=$('nickname').value.trim();if(n.length<2){$('nickMsg').textContent='Nick musi mieć co najmniej 2 znaki.';return}const{error}=await db.from('profiles').upsert({id:user.id,nickname:n});if(error){$('nickMsg').textContent=error.code==='23505'?'Ten nick jest już zajęty.':'❌ '+error.message;return}$('nickMsg').textContent='';await loadProfile();await loadRanking()}function locked(m){return m.kickoff&&Date.now()>=new Date(m.kickoff).getTime()}async function enter(u){user=u;const nickOk=await ensureNickname(u);if(!nickOk)return;$('auth').classList.add('hidden');$('app').classList.remove('hidden');await loadProfile();await loadPicks();await loadResults();await loadGoals();await checkAdmin();await loadNotifications();render()}async function loadPicks(){const{data,error}=await db.from('picks').select('match_id,home_score,away_score').eq('user_id',user.id);if(error){$('status').innerHTML='<div class="warn">⚠️ Nie udało się pobrać typów.</div>';return}picks={};(data||[]).forEach(p=>picks[p.match_id]=p)}async function savePick(id){const m=MATCHES.find(x=>x.id===id);if(locked(m))return;const h=Number($('h-'+id).value),a=Number($('a-'+id).value);if(!Number.isInteger(h)||!Number.isInteger(a)||h<0||a<0){alert('Wpisz oba wyniki jako liczby 0 lub większe.');return}const{error}=await db.from('picks').upsert({user_id:user.id,match_id:id,home_score:h,away_score:a},{onConflict:'user_id,match_id'});if(error){alert('Nie udało się zapisać: '+error.message);return}picks[id]={match_id:id,home_score:h,away_score:a};render()}function liveMinute(r){
  if(!r||r.status!=='live'||r.minute==null)return r?.minute??null;
  const base=Number(r.minute),saved=new Date(r.updated_at).getTime();
  if(!Number.isFinite(base)||!Number.isFinite(saved))return base;
@@ -31,9 +31,20 @@ async function logout(){await db.auth.signOut();location.reload()}async function
  return Math.min(v,130);
 }
 function resultBadge(m){const r=results[m.id];if(!r||r.status==='scheduled')return '';if(r.status==='live'){const lm=liveMinute(r);const state=(lm===45?'⏸ PRZERWA':`🔴 NA ŻYWO${lm?` • ${lm}'`:''}`);return `<div class="resultline live"><span>${state}</span><b>${r.home_score??0} : ${r.away_score??0}</b></div>`;}if(r.status==='finished')return `<div class="resultline finished"><span>KONIEC</span><b>${r.home_score} : ${r.away_score}</b></div>`;return ''}
-function card(m){const p=picks[m.id],isLocked=locked(m),disabled=isLocked?'disabled':'';return `<div class="match">${resultBadge(m)}<div class="teams">${m.home}<br><span class="versus">—</span> ${m.away}</div><div class="date">🗓 ${m.label}</div><div class="score"><input id="h-${m.id}" type="number" min="0" inputmode="numeric" value="${p?.home_score??''}" ${disabled}><span>:</span><input id="a-${m.id}" type="number" min="0" inputmode="numeric" value="${p?.away_score??''}" ${disabled}><button class="save" onclick="savePick('${m.id}')" ${disabled}>Zapisz</button></div>${isLocked?'<div class="locked">🔒 Typowanie zamknięte</div>':p?'<div class="saved">✓ Typ zapisany online</div>':''}</div>`}
+function card(m){const p=picks[m.id],isLocked=locked(m),disabled=isLocked?'disabled':'';return `<div class="match">${resultBadge(m)}${goalsHtml(m.id)}<div class="teams">${m.home}<br><span class="versus">—</span> ${m.away}</div><div class="date">🗓 ${m.label}</div><div class="score"><input id="h-${m.id}" type="number" min="0" inputmode="numeric" value="${p?.home_score??''}" ${disabled}><span>:</span><input id="a-${m.id}" type="number" min="0" inputmode="numeric" value="${p?.away_score??''}" ${disabled}><button class="save" onclick="savePick('${m.id}')" ${disabled}>Zapisz</button></div>${isLocked?'<div class="locked">🔒 Typowanie zamknięte</div>':p?'<div class="saved">✓ Typ zapisany online</div>':''}</div>`}
 async function loadResults(){const{data,error}=await db.from('match_results').select('match_id,home_score,away_score,status,minute,updated_at');if(error)return;results={};(data||[]).forEach(r=>results[r.match_id]=r)}
-function renderLive(){const active=MATCHES.filter(m=>results[m.id]?.status==='live');const finished=MATCHES.filter(m=>results[m.id]?.status==='finished');let html='';if(active.length){html+=active.map(m=>{const r=results[m.id];const p=picks[m.id];return `<div class="livecard"><div class="liveMeta"><span class="livePill">${liveMinute(r)===45?'⏸ PRZERWA':`● LIVE${liveMinute(r)?` • ${liveMinute(r)}'`:''}`}</span><span>${m.label}</span></div><div class="liveTeams"><span>${m.home}</span><b>${r.home_score??0} : ${r.away_score??0}</b><span>${m.away}</span></div>${p?`<div class="yourPick">Twój typ: <b>${p.home_score} : ${p.away_score}</b></div>`:''}</div>`}).join('')}else html+='<div class="emptyLive">Teraz nie trwa żaden mecz.</div>';if(finished.length){html+='<h3 class="recentTitle">Ostatnio zakończone</h3>'+finished.slice(0,6).map(m=>{const r=results[m.id];return `<div class="finishedRow"><span>${m.home} – ${m.away}</span><b>${r.home_score} : ${r.away_score}</b></div>`}).join('')}$('liveMatches').innerHTML=html}function render(){let html='';['okregowa','a','b'].forEach(l=>{if(filter!=='all'&&filter!==l)return;const ms=MATCHES.filter(m=>m.league===l);if(ms.length)html+=`<h3 class="league">${names[l]}</h3>`+ms.map(card).join('')});if(filter==='all'){const cms=MATCHES.filter(m=>m._custom);const groups={};cms.forEach(m=>(groups[m.competition]??=[]).push(m));Object.entries(groups).forEach(([title,ms])=>html+=`<h3 class="league">🏆 ${esc(title)}</h3>`+ms.map(card).join(''));}$('matches').innerHTML=html}
+async function loadGoals(){
+ const{data,error}=await db.from('match_goals').select('id,match_id,team,player,minute').order('minute',{ascending:true}).order('id',{ascending:true});
+ if(error){console.warn('match_goals:',error.message);return}
+ goalEvents={};(data||[]).forEach(g=>(goalEvents[g.match_id]??=[]).push(g));
+}
+function goalsHtml(id){
+ const gs=goalEvents[id]||[];
+ if(!gs.length)return '';
+ return `<div class="goalEvents">${gs.map(g=>`<div><span>⚽ ${Number(g.minute)}'</span><b>${esc(g.player)}</b><small>${g.team==='home'?'Gospodarze':'Goście'}</small></div>`).join('')}</div>`;
+}
+
+function renderLive(){const active=MATCHES.filter(m=>results[m.id]?.status==='live');const finished=MATCHES.filter(m=>results[m.id]?.status==='finished');let html='';if(active.length){html+=active.map(m=>{const r=results[m.id];const p=picks[m.id];return `<div class="livecard"><div class="liveMeta"><span class="livePill">${liveMinute(r)===45?'⏸ PRZERWA':`● LIVE${liveMinute(r)?` • ${liveMinute(r)}'`:''}`}</span><span>${m.label}</span></div><div class="liveTeams"><span>${m.home}</span><b>${r.home_score??0} : ${r.away_score??0}</b><span>${m.away}</span></div>${goalsHtml(m.id)}${p?`<div class="yourPick">Twój typ: <b>${p.home_score} : ${p.away_score}</b></div>`:''}</div>`}).join('')}else html+='<div class="emptyLive">Teraz nie trwa żaden mecz.</div>';if(finished.length){html+='<h3 class="recentTitle">Ostatnio zakończone</h3>'+finished.slice(0,6).map(m=>{const r=results[m.id];return `<div class="finishedRow"><span>${m.home} – ${m.away}</span><b>${r.home_score} : ${r.away_score}</b></div>`}).join('')}$('liveMatches').innerHTML=html}function render(){let html='';['okregowa','a','b'].forEach(l=>{if(filter!=='all'&&filter!==l)return;const ms=MATCHES.filter(m=>m.league===l);if(ms.length)html+=`<h3 class="league">${names[l]}</h3>`+ms.map(card).join('')});if(filter==='all'){const cms=MATCHES.filter(m=>m._custom);const groups={};cms.forEach(m=>(groups[m.competition]??=[]).push(m));Object.entries(groups).forEach(([title,ms])=>html+=`<h3 class="league">🏆 ${esc(title)}</h3>`+ms.map(card).join(''));}$('matches').innerHTML=html}
 async function checkAdmin(){
   const{data,error}=await db.rpc('is_admin');
   isAdmin=!error&&data===true;
@@ -42,6 +53,7 @@ async function checkAdmin(){
 async function loadAdmin(){
   if(!isAdmin)return;
   await loadResults();
+  await loadGoals();
   const list=MATCHES.filter(m=>adminMatchFilter==='all'||(results[m.id]?.status||'scheduled')===adminMatchFilter);
   $('adminMatchCount').textContent=String(MATCHES.length);
   $('adminMatches').innerHTML=list.length?list.map(m=>{
@@ -49,7 +61,7 @@ async function loadAdmin(){
     const status=r.status||'scheduled';
     const label=status==='live'?'🔴 LIVE':status==='finished'?'✓ Zakończony':'◷ Przed meczem';
     const score=status==='scheduled'?'—':`${r.home_score??0} : ${r.away_score??0}`;
-    return `<div class="adminMatchRow" data-status="${status}"><button class="adminMatchSummary" onclick="toggleAdminMatch('${m.id}')"><span class="adminMatchMain"><b>${esc(m.home)} — ${esc(m.away)}</b><small>🗓 ${esc(m.label)}</small></span><span class="adminMatchResult"><strong>${score}</strong><em class="statusPill ${status}">${label}</em></span><span class="adminChevron" id="ac-${m.id}">⌄</span></button><div id="ae-${m.id}" class="adminMatchEdit hidden"><div class="adminEditGrid"><label>Status<select id="rs-${m.id}"><option value="scheduled" ${status==='scheduled'?'selected':''}>Przed meczem</option><option value="live" ${status==='live'?'selected':''}>🔴 Na żywo</option><option value="finished" ${status==='finished'?'selected':''}>Koniec</option></select></label><label>Minuta<input id="rm-${m.id}" class="minute" type="number" min="1" max="130" inputmode="numeric" placeholder="min" value="${r.minute??''}"></label></div><div class="adminScoreEdit"><input id="rh-${m.id}" type="number" min="0" inputmode="numeric" value="${r.home_score??''}" placeholder="0"><span>:</span><input id="ra-${m.id}" type="number" min="0" inputmode="numeric" value="${r.away_score??''}" placeholder="0"><button onclick="saveResult('${m.id}')">💾 Zapisz</button></div>${m._custom?`<div class="customMatchActions"><button onclick="editCustomMatch(${Number(m._customId)})">✏️ Edytuj mecz</button><button class="dangerGhost" onclick="deleteCustomMatch(${Number(m._customId)})">🗑 Usuń mecz</button></div>`:''}</div></div>`;
+    return `<div class="adminMatchRow" data-status="${status}"><button class="adminMatchSummary" onclick="toggleAdminMatch('${m.id}')"><span class="adminMatchMain"><b>${esc(m.home)} — ${esc(m.away)}</b><small>🗓 ${esc(m.label)}</small></span><span class="adminMatchResult"><strong>${score}</strong><em class="statusPill ${status}">${label}</em></span><span class="adminChevron" id="ac-${m.id}">⌄</span></button><div id="ae-${m.id}" class="adminMatchEdit hidden"><div class="adminEditGrid"><label>Status<select id="rs-${m.id}"><option value="scheduled" ${status==='scheduled'?'selected':''}>Przed meczem</option><option value="live" ${status==='live'?'selected':''}>🔴 Na żywo</option><option value="finished" ${status==='finished'?'selected':''}>Koniec</option></select></label><label>Minuta<input id="rm-${m.id}" class="minute" type="number" min="1" max="130" inputmode="numeric" placeholder="min" value="${r.minute??''}"></label></div><div class="adminScoreEdit"><input id="rh-${m.id}" type="number" min="0" inputmode="numeric" value="${r.home_score??''}" placeholder="0"><span>:</span><input id="ra-${m.id}" type="number" min="0" inputmode="numeric" value="${r.away_score??''}" placeholder="0"><button onclick="saveResult('${m.id}')">💾 Zapisz</button></div><div class="goalAdmin"><h4>⚽ Strzelcy bramek</h4><div class="goalAdd"><select id="gt-${m.id}"><option value="home">${esc(m.home)}</option><option value="away">${esc(m.away)}</option></select><input id="gp-${m.id}" maxlength="80" placeholder="Imię i nazwisko"><input id="gm-${m.id}" type="number" min="1" max="130" inputmode="numeric" placeholder="min"><button onclick="addGoal('${m.id}')">⚽ Dodaj bramkę</button></div><div class="goalAdminList">${(goalEvents[m.id]||[]).map(g=>`<div><span>⚽ ${g.minute}' ${esc(g.player)} <small>(${g.team==='home'?esc(m.home):esc(m.away)})</small></span><button class="dangerGhost" onclick="deleteGoal(${Number(g.id)})">🗑</button></div>`).join('')}</div></div>${m._custom?`<div class="customMatchActions"><button onclick="editCustomMatch(${Number(m._customId)})">✏️ Edytuj mecz</button><button class="dangerGhost" onclick="deleteCustomMatch(${Number(m._customId)})">🗑 Usuń mecz</button></div>`:''}</div></div>`;
   }).join(''):'<div class="adminEmpty">Brak meczów w tym filtrze.</div>';
 }
 function adminSection(name){
@@ -73,6 +85,22 @@ function setAdminMatchFilter(value,btn){
   loadAdmin();
 }
 async function refreshAdminDashboard(){await loadAdmin();await loadAdminUsers();}
+
+async function addGoal(id){
+ if(!isAdmin)return;
+ const team=$('gt-'+id).value,player=$('gp-'+id).value.trim(),minute=Number($('gm-'+id).value);
+ if(!player){alert('Wpisz imię i nazwisko strzelca.');return}
+ if(!Number.isInteger(minute)||minute<1||minute>130){alert('Wpisz prawidłową minutę bramki.');return}
+ const{error}=await db.from('match_goals').insert({match_id:id,team,player,minute});
+ if(error){alert('Nie udało się dodać strzelca: '+error.message);return}
+ await loadGoals();await loadAdmin();render();renderLive();
+}
+async function deleteGoal(goalId){
+ if(!isAdmin||!confirm('Usunąć tego strzelca?'))return;
+ const{error}=await db.from('match_goals').delete().eq('id',goalId);
+ if(error){alert('Nie udało się usunąć strzelca: '+error.message);return}
+ await loadGoals();await loadAdmin();render();renderLive();
+}
 
 async function saveResult(id){
   if(!isAdmin)return;
@@ -330,12 +358,12 @@ async function showTab(t){
   $('tabChat').classList.toggle('active',c);
   $('tabNotifications').classList.toggle('active',n);
   $('tabAdmin').classList.toggle('active',a);
-  if(l){await loadResults();renderLive()}
+  if(l){await loadResults();await loadGoals();renderLive()}
   if(r)await loadRanking();
   if(c)await loadChat();
   if(n)await loadNotifications();
   if(a){ensureCustomMatchAdminUI();await loadAdmin();await loadAdminUsers();}
-}document.querySelectorAll('.filters button').forEach(b=>b.onclick=()=>{filter=b.dataset.f;document.querySelectorAll('.filters button').forEach(x=>x.classList.toggle('active',x===b));render()});(async()=>{const{data}=await db.auth.getSession();if(data.session)await enter(data.session.user)})();setInterval(async()=>{if(!user)return;await loadResults();if(!$('matchesView').classList.contains('hidden'))render();if(!$('liveView').classList.contains('hidden'))renderLive();await loadNotifications();if(!$('chatView').classList.contains('hidden'))await loadChat()},10000);
+}document.querySelectorAll('.filters button').forEach(b=>b.onclick=()=>{filter=b.dataset.f;document.querySelectorAll('.filters button').forEach(x=>x.classList.toggle('active',x===b));render()});(async()=>{const{data}=await db.auth.getSession();if(data.session)await enter(data.session.user)})();setInterval(async()=>{if(!user)return;await loadResults();await loadGoals();if(!$('matchesView').classList.contains('hidden'))render();if(!$('liveView').classList.contains('hidden'))renderLive();await loadNotifications();if(!$('chatView').classList.contains('hidden'))await loadChat()},10000);
 
 /* =========================================================
    DZIKI TYPER — DODATKOWE MECZE ADMINA v1
@@ -533,3 +561,20 @@ showTab=async function(t){
   ensureWeekUI();$('weekView').classList.remove('hidden');$('tabWeek')?.classList.add('active');
   await loadResults();await loadWeekFeature();
 };
+
+/* DZIKI TYPER — STRZELCY v2 */
+(function(){
+ const s=document.createElement('style');
+ s.textContent=`
+ .goalEvents{margin:8px 0 12px;padding:8px 10px;border-radius:10px;background:rgba(255,255,255,.04)}
+ .goalEvents div{display:grid;grid-template-columns:auto 1fr auto;gap:8px;align-items:center;padding:4px 0;font-size:13px}
+ .goalEvents small{opacity:.7}
+ .goalAdmin{margin-top:14px;padding-top:12px;border-top:1px solid rgba(255,255,255,.1)}
+ .goalAdmin h4{margin:0 0 8px}
+ .goalAdd{display:grid;grid-template-columns:1fr 1fr 70px;gap:7px}
+ .goalAdd button{grid-column:1/-1}
+ .goalAdminList>div{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:7px;padding:7px 0;border-top:1px solid rgba(255,255,255,.08)}
+ @media(max-width:600px){.goalAdd{grid-template-columns:1fr 80px}.goalAdd select{grid-column:1/-1}}
+ `;
+ document.head.appendChild(s);
+})();
