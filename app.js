@@ -595,16 +595,37 @@ showTab=async function(t){
 };
 
 
-/* DZIKI TYPER — SŁUCHAJ DZIKIE RADIO v1 */
-const DZIKI_RADIO_PAGE='http://51.255.8.139:11250/index.html';
+/* DZIKI TYPER — RADIO v2: odtwarzanie w aplikacji */
+const DZIKI_RADIO_STREAM='https://s7.radiohost.pl:2199/tunein/martinru.pls';
+let dzikiRadioAudio=null,dzikiRadioPlaying=false;
+
 function ensureRadioButton(){
  if($('dzikiRadioBtn'))return;
- const btn=document.createElement('a');
- btn.id='dzikiRadioBtn';btn.className='dzikiRadioBtn';
- btn.href=DZIKI_RADIO_PAGE;btn.target='_blank';btn.rel='noopener';
- btn.innerHTML='<span class="radioIcon">📻</span><span><b>▶ SŁUCHAJ DZIKIE RADIO</b><small>Otwórz radio</small></span>';
+ const wrap=document.createElement('div');
+ wrap.id='dzikiRadioBtn';wrap.className='dzikiRadioMini';
+ wrap.innerHTML='<button type="button" id="dzikiRadioToggle" onclick="toggleDzikiRadio()">📻 <b>Radio</b> <span>▶</span></button>';
  const badge=$('onlineBadge'),info=$('userInfo');
- if(badge)badge.after(btn);else if(info)info.after(btn);else ($('app')||document.body).prepend(btn);
+ if(badge)badge.after(wrap); else if(info)info.after(wrap); else ($('app')||document.body).prepend(wrap);
+}
+
+async function toggleDzikiRadio(){
+ const btn=$('dzikiRadioToggle');
+ if(!dzikiRadioAudio){
+   dzikiRadioAudio=new Audio();
+   dzikiRadioAudio.preload='none';
+   dzikiRadioAudio.src=DZIKI_RADIO_STREAM;
+   dzikiRadioAudio.addEventListener('playing',()=>{dzikiRadioPlaying=true;if(btn)btn.innerHTML='📻 <b>Radio</b> <span>⏸</span>'});
+   dzikiRadioAudio.addEventListener('pause',()=>{dzikiRadioPlaying=false;if(btn)btn.innerHTML='📻 <b>Radio</b> <span>▶</span>'});
+   dzikiRadioAudio.addEventListener('error',()=>{dzikiRadioPlaying=false;if(btn)btn.innerHTML='📻 <b>Radio</b> <span>▶</span>';alert('Nie udało się uruchomić radia. Spróbuj ponownie za chwilę.')});
+ }
+ if(!dzikiRadioAudio.paused){dzikiRadioAudio.pause();return}
+ try{
+   btn.disabled=true;btn.innerHTML='📻 <b>Radio</b> <span>…</span>';
+   await dzikiRadioAudio.play();
+ }catch(e){
+   btn.innerHTML='📻 <b>Radio</b> <span>▶</span>';
+   alert('Przeglądarka nie uruchomiła streamu. Spróbuj ponownie.');
+ }finally{btn.disabled=false}
 }
 
 (function(){const s=document.createElement('style');s.textContent=`.goalEvents{margin:8px 0 12px;padding:8px 10px;border-radius:10px;background:rgba(255,255,255,.04)}.goalEvents div{display:grid;grid-template-columns:auto 1fr auto;gap:8px;padding:4px 0}.goalEvents small{opacity:.7}.goalAdmin{margin-top:14px;padding-top:12px;border-top:1px solid rgba(255,255,255,.1)}.goalAdd{display:grid;grid-template-columns:1fr 1fr 70px;gap:7px}.goalAdd button{grid-column:1/-1}.goalAdminList>div{display:flex;justify-content:space-between;padding:7px 0}@media(max-width:600px){.goalAdd{grid-template-columns:1fr 80px}.goalAdd select{grid-column:1/-1}}`;document.head.appendChild(s)})();
@@ -618,6 +639,7 @@ function ensureRadioButton(){
 `;document.head.appendChild(s)})();
 
 (function(){const s=document.createElement('style');s.textContent=`
-.dzikiRadioBtn{display:flex;align-items:center;gap:10px;width:max-content;max-width:100%;margin:10px 0 4px;padding:10px 14px;border:1px solid rgba(245,181,27,.45);border-radius:14px;background:rgba(245,181,27,.10);color:inherit;text-decoration:none}
-.dzikiRadioBtn .radioIcon{font-size:24px}.dzikiRadioBtn span:last-child{display:flex;flex-direction:column;gap:2px}.dzikiRadioBtn b{color:#f5b51b;font-size:14px}.dzikiRadioBtn small{opacity:.7;font-size:11px}
+.dzikiRadioMini{display:inline-flex;margin:6px 0 0 8px;vertical-align:middle}
+.dzikiRadioMini button{display:inline-flex;align-items:center;gap:5px;padding:6px 10px;border:1px solid rgba(245,181,27,.30);border-radius:999px;background:rgba(245,181,27,.07);color:inherit;font-size:13px;line-height:1.2}
+.dzikiRadioMini button b{color:#f5b51b}.dzikiRadioMini button span{font-size:12px}
 `;document.head.appendChild(s)})();
