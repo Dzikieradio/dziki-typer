@@ -584,7 +584,7 @@ async function saveWeekFeature(){
 const _oldLoadAdminUsers=loadAdminUsers;
 loadAdminUsers=async function(){await _oldLoadAdminUsers(); if(isAdmin){ensureWeekUI();renderWeekAdmin();}};
 const _oldEnter=enter;
-enter=async function(u){await loadCustomMatches();await _oldEnter(u);ensureCustomMatchAdminUI();ensureWeekUI();ensureRadioButton();await loadWeekFeature();};
+enter=async function(u){await loadCustomMatches();await _oldEnter(u);ensureCustomMatchAdminUI();ensureWeekUI();await loadWeekFeature();};
 const _oldShowTab=showTab;
 showTab=async function(t){
   if(t!=='week')return _oldShowTab(t);
@@ -594,28 +594,6 @@ showTab=async function(t){
   await loadResults();await loadWeekFeature();
 };
 
-
-/* DZIKI TYPER — RADIOHOST PLAYER */
-const DZIKI_RADIO_PLAYER='https://stacja.radiohost.pl/customBoxes/link/680/7b736/type/aplayer2';
-function ensureRadioButton(){
- if(document.getElementById('dzikiRadioBtn'))return;
- const btn=document.createElement('button');
- btn.type='button'; btn.id='dzikiRadioBtn'; btn.className='dzikiRadioTop';
- btn.innerHTML='📻 <b>Radio</b> ▶';
- btn.onclick=toggleDzikiRadioPlayer;
- const host=document.querySelector('header')||document.querySelector('.header')||document.querySelector('.hero')||document.body.firstElementChild;
- if(host){host.style.position='relative';host.appendChild(btn)}
-}
-function toggleDzikiRadioPlayer(){
- let box=document.getElementById('dzikiRadioBox');
- const btn=document.getElementById('dzikiRadioBtn');
- if(box){box.remove(); if(btn)btn.innerHTML='📻 <b>Radio</b> ▶'; return}
- box=document.createElement('div'); box.id='dzikiRadioBox'; box.className='dzikiRadioBox';
- box.innerHTML='<div class="dzikiRadioBar"><b>📻 DzikieRadio®</b><button type="button" onclick="toggleDzikiRadioPlayer()">✕</button></div><iframe src="'+DZIKI_RADIO_PLAYER+'" title="DzikieRadio" allow="autoplay" referrerpolicy="strict-origin-when-cross-origin"></iframe>';
- document.body.appendChild(box);
- if(btn)btn.innerHTML='📻 <b>Radio</b> ▲';
-}
-
 (function(){const s=document.createElement('style');s.textContent=`.goalEvents{margin:8px 0 12px;padding:8px 10px;border-radius:10px;background:rgba(255,255,255,.04)}.goalEvents div{display:grid;grid-template-columns:auto 1fr auto;gap:8px;padding:4px 0}.goalEvents small{opacity:.7}.goalAdmin{margin-top:14px;padding-top:12px;border-top:1px solid rgba(255,255,255,.1)}.goalAdd{display:grid;grid-template-columns:1fr 1fr 70px;gap:7px}.goalAdd button{grid-column:1/-1}.goalAdminList>div{display:flex;justify-content:space-between;padding:7px 0}@media(max-width:600px){.goalAdd{grid-template-columns:1fr 80px}.goalAdd select{grid-column:1/-1}}`;document.head.appendChild(s)})();
 
 (function(){const s=document.createElement('style');s.textContent=`
@@ -624,14 +602,4 @@ function toggleDzikiRadioPlayer(){
 .adminOnlinePanel{margin-bottom:16px}.adminOnlineHead{display:flex;align-items:center;justify-content:space-between;gap:12px}
 .adminOnlineHead h3{margin:3px 0 10px}.adminOnlineHead>strong{font-size:28px}
 .onlineUserRow{display:flex;align-items:center;gap:8px;padding:9px 0;border-top:1px solid rgba(255,255,255,.08)}
-`;document.head.appendChild(s)})();
-
-(function(){const s=document.createElement('style');s.textContent=`
-.dzikiRadioTop{position:absolute;left:8px;top:8px;z-index:50;display:inline-flex;align-items:center;gap:4px;padding:5px 8px;border:1px solid rgba(245,181,27,.32);border-radius:999px;background:rgba(8,11,15,.92);color:#fff;font-size:11px;line-height:1;white-space:nowrap}
-.dzikiRadioTop b{color:#f5b51b;font-size:11px}
-.dzikiRadioBox{position:fixed;left:10px;right:10px;top:58px;z-index:9999;max-width:430px;margin:auto;background:#0b0f14;border:1px solid rgba(245,181,27,.45);border-radius:12px;overflow:hidden;box-shadow:0 12px 35px rgba(0,0,0,.55)}
-.dzikiRadioBar{height:34px;display:flex;align-items:center;justify-content:space-between;padding:0 9px;color:#f5b51b;font-size:12px}
-.dzikiRadioBar button{border:0;background:transparent;color:#fff;font-size:17px;padding:3px 6px}
-.dzikiRadioBox iframe{display:block;width:100%;height:185px;border:0;background:#111}
-@media(max-width:700px){.dzikiRadioTop{left:6px;top:6px;padding:5px 7px;font-size:10px}.dzikiRadioTop b{font-size:10px}.dzikiRadioBox{top:50px}}
 `;document.head.appendChild(s)})();
