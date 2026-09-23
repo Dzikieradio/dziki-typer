@@ -595,37 +595,15 @@ showTab=async function(t){
 };
 
 
-/* DZIKI TYPER — RADIO v2: odtwarzanie w aplikacji */
-const DZIKI_RADIO_STREAM='https://s7.radiohost.pl:2199/tunein/martinru.pls';
-let dzikiRadioAudio=null,dzikiRadioPlaying=false;
-
+/* DZIKI TYPER — RADIO TOP */
 function ensureRadioButton(){
- if($('dzikiRadioBtn'))return;
- const wrap=document.createElement('div');
- wrap.id='dzikiRadioBtn';wrap.className='dzikiRadioMini';
- wrap.innerHTML='<button type="button" id="dzikiRadioToggle" onclick="toggleDzikiRadio()">📻 <b>Radio</b> <span>▶</span></button>';
- const badge=$('onlineBadge'),info=$('userInfo');
- if(badge)badge.after(wrap); else if(info)info.after(wrap); else ($('app')||document.body).prepend(wrap);
-}
-
-async function toggleDzikiRadio(){
- const btn=$('dzikiRadioToggle');
- if(!dzikiRadioAudio){
-   dzikiRadioAudio=new Audio();
-   dzikiRadioAudio.preload='none';
-   dzikiRadioAudio.src=DZIKI_RADIO_STREAM;
-   dzikiRadioAudio.addEventListener('playing',()=>{dzikiRadioPlaying=true;if(btn)btn.innerHTML='📻 <b>Radio</b> <span>⏸</span>'});
-   dzikiRadioAudio.addEventListener('pause',()=>{dzikiRadioPlaying=false;if(btn)btn.innerHTML='📻 <b>Radio</b> <span>▶</span>'});
-   dzikiRadioAudio.addEventListener('error',()=>{dzikiRadioPlaying=false;if(btn)btn.innerHTML='📻 <b>Radio</b> <span>▶</span>';alert('Nie udało się uruchomić radia. Spróbuj ponownie za chwilę.')});
- }
- if(!dzikiRadioAudio.paused){dzikiRadioAudio.pause();return}
- try{
-   btn.disabled=true;btn.innerHTML='📻 <b>Radio</b> <span>…</span>';
-   await dzikiRadioAudio.play();
- }catch(e){
-   btn.innerHTML='📻 <b>Radio</b> <span>▶</span>';
-   alert('Przeglądarka nie uruchomiła streamu. Spróbuj ponownie.');
- }finally{btn.disabled=false}
+ if(document.getElementById('dzikiRadioBtn'))return;
+ const btn=document.createElement('button');
+ btn.type='button';btn.id='dzikiRadioBtn';btn.className='dzikiRadioTop';
+ btn.innerHTML='📻 <b>Radio</b> ▶';
+ btn.onclick=()=>alert('Radio: przygotowane miejsce. Odtwarzanie podepniemy do bezpośredniego streamu HTTPS.');
+ const host=document.querySelector('header')||document.querySelector('.header')||document.querySelector('.hero')||document.body.firstElementChild;
+ if(host){host.style.position='relative';host.appendChild(btn)}
 }
 
 (function(){const s=document.createElement('style');s.textContent=`.goalEvents{margin:8px 0 12px;padding:8px 10px;border-radius:10px;background:rgba(255,255,255,.04)}.goalEvents div{display:grid;grid-template-columns:auto 1fr auto;gap:8px;padding:4px 0}.goalEvents small{opacity:.7}.goalAdmin{margin-top:14px;padding-top:12px;border-top:1px solid rgba(255,255,255,.1)}.goalAdd{display:grid;grid-template-columns:1fr 1fr 70px;gap:7px}.goalAdd button{grid-column:1/-1}.goalAdminList>div{display:flex;justify-content:space-between;padding:7px 0}@media(max-width:600px){.goalAdd{grid-template-columns:1fr 80px}.goalAdd select{grid-column:1/-1}}`;document.head.appendChild(s)})();
@@ -639,7 +617,7 @@ async function toggleDzikiRadio(){
 `;document.head.appendChild(s)})();
 
 (function(){const s=document.createElement('style');s.textContent=`
-.dzikiRadioMini{display:inline-flex;margin:6px 0 0 8px;vertical-align:middle}
-.dzikiRadioMini button{display:inline-flex;align-items:center;gap:5px;padding:6px 10px;border:1px solid rgba(245,181,27,.30);border-radius:999px;background:rgba(245,181,27,.07);color:inherit;font-size:13px;line-height:1.2}
-.dzikiRadioMini button b{color:#f5b51b}.dzikiRadioMini button span{font-size:12px}
+.dzikiRadioTop{position:absolute;left:8px;top:8px;z-index:50;display:inline-flex;align-items:center;gap:4px;padding:5px 8px;border:1px solid rgba(245,181,27,.32);border-radius:999px;background:rgba(8,11,15,.92);color:#fff;font-size:11px;line-height:1;white-space:nowrap}
+.dzikiRadioTop b{color:#f5b51b;font-size:11px}
+@media(max-width:700px){.dzikiRadioTop{left:6px;top:6px;padding:5px 7px;font-size:10px}.dzikiRadioTop b{font-size:10px}}
 `;document.head.appendChild(s)})();
