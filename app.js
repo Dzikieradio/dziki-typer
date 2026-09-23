@@ -1,4 +1,4 @@
-const U='https://kfysmqwhpzemoknqakzn.supabase.co',K='sb_publishable_UNdKtQ2mCMaaWcMK0FvVIA_r8cNIUl-';const db=supabase.createClient(U,K);const $=id=>document.getElementById(id);let user=null,picks={},filter='all',profile=null,isAdmin=false,results={},goalEvents={},adminMatchFilter='all',adminUsersCache=[];const names={okregowa:'Liga Okręgowa Skoczów–Żywiec • kolejka 8',a:'A Klasa Żywiec • kolejka 7',b:'B Klasa Żywiec • kolejka 7'};async function login(){message.textContent='Logowanie...';const{data,error}=await db.auth.signInWithPassword({email:email.value.trim(),password:password.value});if(error){message.textContent='❌ '+error.message;return}await enter(data.user)}async function register(){
+const U='https://kfysmqwhpzemoknqakzn.supabase.co',K='sb_publishable_UNdKtQ2mCMaaWcMK0FvVIA_r8cNIUl-';const db=supabase.createClient(U,K);const $=id=>document.getElementById(id);let user=null,picks={},filter='all',profile=null,isAdmin=false,results={},goalEvents={},adminMatchFilter='all',adminUsersCache=[],presenceChannel=null,onlineUsers={};const names={okregowa:'Liga Okręgowa Skoczów–Żywiec • kolejka 8',a:'A Klasa Żywiec • kolejka 7',b:'B Klasa Żywiec • kolejka 7'};async function login(){message.textContent='Logowanie...';const{data,error}=await db.auth.signInWithPassword({email:email.value.trim(),password:password.value});if(error){message.textContent='❌ '+error.message;return}await enter(data.user)}async function register(){
  const n=$('regNickname').value.trim();
  if(n.length<2){message.textContent='❌ Wpisz nick (minimum 2 znaki).';return}
  if(n.length>30){message.textContent='❌ Nick może mieć maksymalnie 30 znaków.';return}
@@ -22,7 +22,49 @@ async function ensureNickname(u,fallback=''){
  if(error){alert(error.code==='23505'?'Ten nick jest już zajęty. Wybierz inny nick.':'Nie udało się zapisać nicku: '+error.message);return false}
  return true;
 }
-async function logout(){await db.auth.signOut();location.reload()}async function loadProfile(){const{data,error}=await db.from('profiles').select('id,nickname,avatar,favorite_club').eq('id',user.id).maybeSingle();profile=data||null;const nick=profile?.nickname||user.user_metadata?.nickname||user.email;if($('nicknameBox'))$('nicknameBox').classList.add('hidden');$('userInfo').innerHTML=`<button class="profileLink" onclick="showMyProfile()">${esc(profile?.avatar||'👤')} ${esc(nick)}</button>`}async function saveNickname(){const n=$('nickname').value.trim();if(n.length<2){$('nickMsg').textContent='Nick musi mieć co najmniej 2 znaki.';return}const{error}=await db.from('profiles').upsert({id:user.id,nickname:n});if(error){$('nickMsg').textContent=error.code==='23505'?'Ten nick jest już zajęty.':'❌ '+error.message;return}$('nickMsg').textContent='';await loadProfile();await loadRanking()}function locked(m){return m.kickoff&&Date.now()>=new Date(m.kickoff).getTime()}async function enter(u){user=u;const nickOk=await ensureNickname(u);if(!nickOk)return;$('auth').classList.add('hidden');$('app').classList.remove('hidden');await loadProfile();await loadPicks();await loadResults();await loadGoals();await checkAdmin();await loadNotifications();render()}async function loadPicks(){const{data,error}=await db.from('picks').select('match_id,home_score,away_score').eq('user_id',user.id);if(error){$('status').innerHTML='<div class="warn">⚠️ Nie udało się pobrać typów.</div>';return}picks={};(data||[]).forEach(p=>picks[p.match_id]=p)}async function savePick(id){const m=MATCHES.find(x=>x.id===id);if(locked(m))return;const h=Number($('h-'+id).value),a=Number($('a-'+id).value);if(!Number.isInteger(h)||!Number.isInteger(a)||h<0||a<0){alert('Wpisz oba wyniki jako liczby 0 lub większe.');return}const{error}=await db.from('picks').upsert({user_id:user.id,match_id:id,home_score:h,away_score:a},{onConflict:'user_id,match_id'});if(error){alert('Nie udało się zapisać: '+error.message);return}picks[id]={match_id:id,home_score:h,away_score:a};render()}function liveMinute(r){
+async function logout(){if(presenceChannel){try{await presenceChannel.untrack();await db.removeChannel(presenceChannel)}catch(e){}}await db.auth.signOut();location.reload()}async function loadProfile(){const{data,error}=await db.from('profiles').select('id,nickname,avatar,favorite_club').eq('id',user.id).maybeSingle();profile=data||null;const nick=profile?.nickname||user.user_metadata?.nickname||user.email;if($('nicknameBox'))$('nicknameBox').classList.add('hidden');$('userInfo').innerHTML=`<button class="profileLink" onclick="showMyProfile()">${esc(profile?.avatar||'👤')} ${esc(nick)}</button>`}async function saveNickname(){const n=$('nickname').value.trim();if(n.length<2){$('nickMsg').textContent='Nick musi mieć co najmniej 2 znaki.';return}const{error}=await db.from('profiles').upsert({id:user.id,nickname:n});if(error){$('nickMsg').textContent=error.code==='23505'?'Ten nick jest już zajęty.':'❌ '+error.message;return}$('nickMsg').textContent='';await loadProfile();await loadRanking()}function locked(m){return m.kickoff&&Date.now()>=new Date(m.kickoff).getTime()}async function enter(u){user=u;const nickOk=await ensureNickname(u);if(!nickOk)return;$('auth').classList.add('hidden');$('app').classList.remove('hidden');await loadProfile();await startPresence();await loadPicks();await loadResults();await loadGoals();await checkAdmin();await loadNotifications();render()}
+function onlineCount(){return Object.keys(onlineUsers).length}
+function renderOnline(){
+ const n=onlineCount();
+ let badge=$('onlineBadge');
+ if(!badge){
+   badge=document.createElement('div');badge.id='onlineBadge';badge.className='onlineBadge';
+   const info=$('userInfo'); if(info)info.after(badge);
+ }
+ if(badge)badge.innerHTML=`<span></span> Online: <b>${n}</b>`;if($('adminOnlineCount'))$('adminOnlineCount').textContent=String(n);
+ const box=$('adminOnlineUsers');
+ if(box){
+   const rows=Object.values(onlineUsers).sort((a,b)=>String(a.nickname||'').localeCompare(String(b.nickname||''),'pl'));
+   box.innerHTML=rows.length?rows.map(x=>`<div class="onlineUserRow"><span>🟢</span><b>${esc(x.nickname||'Użytkownik')}</b></div>`).join(''):'<p class="muted">Nikt poza Tobą nie jest teraz online.</p>';
+ }
+}
+function rebuildPresence(){
+ if(!presenceChannel)return;
+ const state=presenceChannel.presenceState(), map={};
+ Object.values(state).flat().forEach(x=>{if(x.user_id)map[x.user_id]=x});
+ onlineUsers=map;renderOnline();
+}
+async function startPresence(){
+ if(!user||presenceChannel)return;
+ presenceChannel=db.channel('dziki-typer-online',{config:{presence:{key:user.id}}});
+ presenceChannel.on('presence',{event:'sync'},rebuildPresence);
+ presenceChannel.on('presence',{event:'join'},rebuildPresence);
+ presenceChannel.on('presence',{event:'leave'},rebuildPresence);
+ presenceChannel.subscribe(async status=>{
+   if(status==='SUBSCRIBED'){
+     await presenceChannel.track({user_id:user.id,nickname:profile?.nickname||user.email,avatar:profile?.avatar||'👤',online_at:new Date().toISOString()});
+   }
+ });
+}
+function ensureAdminOnlineUI(){
+ if(!isAdmin||!$('adminUsersSection')||$('adminOnlinePanel'))return;
+ const p=document.createElement('div');p.id='adminOnlinePanel';p.className='panel adminOnlinePanel';
+ p.innerHTML='<div class="adminOnlineHead"><div><span class="eyebrow">🟢 ONLINE</span><h3>Osoby w aplikacji</h3></div><strong id="adminOnlineCount"></strong></div><div id="adminOnlineUsers"></div>';
+ $('adminUsersSection').prepend(p);
+ renderOnline();
+}
+
+async function loadPicks(){const{data,error}=await db.from('picks').select('match_id,home_score,away_score').eq('user_id',user.id);if(error){$('status').innerHTML='<div class="warn">⚠️ Nie udało się pobrać typów.</div>';return}picks={};(data||[]).forEach(p=>picks[p.match_id]=p)}async function savePick(id){const m=MATCHES.find(x=>x.id===id);if(locked(m))return;const h=Number($('h-'+id).value),a=Number($('a-'+id).value);if(!Number.isInteger(h)||!Number.isInteger(a)||h<0||a<0){alert('Wpisz oba wyniki jako liczby 0 lub większe.');return}const{error}=await db.from('picks').upsert({user_id:user.id,match_id:id,home_score:h,away_score:a},{onConflict:'user_id,match_id'});if(error){alert('Nie udało się zapisać: '+error.message);return}picks[id]={match_id:id,home_score:h,away_score:a};render()}function liveMinute(r){
  if(!r||r.status!=='live'||r.minute==null)return r?.minute??null;
  const base=Number(r.minute),saved=new Date(r.updated_at).getTime();
  if(!Number.isFinite(base)||!Number.isFinite(saved))return base;
@@ -61,7 +103,7 @@ function adminSection(name){
   $('adminUsersSection').classList.toggle('hidden',matches);
   $('adminNavMatches').classList.toggle('active',matches);
   $('adminNavUsers').classList.toggle('active',!matches);
-  if(matches)loadAdmin(); else loadAdminUsers();
+  if(matches)loadAdmin(); else {ensureAdminOnlineUI();loadAdminUsers();}
 }
 function toggleAdminMatch(id){
   const box=$('ae-'+id),chev=$('ac-'+id); if(!box)return;
@@ -339,7 +381,7 @@ async function showTab(t){
   if(r)await loadRanking();
   if(c)await loadChat();
   if(n)await loadNotifications();
-  if(a){ensureCustomMatchAdminUI();await loadAdmin();await loadAdminUsers();}
+  if(a){ensureCustomMatchAdminUI();ensureAdminOnlineUI();await loadAdmin();await loadAdminUsers();renderOnline();}
 }document.querySelectorAll('.filters button').forEach(b=>b.onclick=()=>{filter=b.dataset.f;document.querySelectorAll('.filters button').forEach(x=>x.classList.toggle('active',x===b));render()});(async()=>{const{data}=await db.auth.getSession();if(data.session)await enter(data.session.user)})();setInterval(async()=>{if(!user)return;await loadResults();await loadGoals();if(!$('matchesView').classList.contains('hidden'))render();if(!$('liveView').classList.contains('hidden'))renderLive();await loadNotifications();if(!$('chatView').classList.contains('hidden'))await loadChat()},10000);
 
 /* =========================================================
@@ -553,3 +595,11 @@ showTab=async function(t){
 };
 
 (function(){const s=document.createElement('style');s.textContent=`.goalEvents{margin:8px 0 12px;padding:8px 10px;border-radius:10px;background:rgba(255,255,255,.04)}.goalEvents div{display:grid;grid-template-columns:auto 1fr auto;gap:8px;padding:4px 0}.goalEvents small{opacity:.7}.goalAdmin{margin-top:14px;padding-top:12px;border-top:1px solid rgba(255,255,255,.1)}.goalAdd{display:grid;grid-template-columns:1fr 1fr 70px;gap:7px}.goalAdd button{grid-column:1/-1}.goalAdminList>div{display:flex;justify-content:space-between;padding:7px 0}@media(max-width:600px){.goalAdd{grid-template-columns:1fr 80px}.goalAdd select{grid-column:1/-1}}`;document.head.appendChild(s)})();
+
+(function(){const s=document.createElement('style');s.textContent=`
+.onlineBadge{display:inline-flex;align-items:center;gap:6px;margin:6px 0 0;padding:6px 10px;border:1px solid rgba(63,214,111,.25);border-radius:999px;background:rgba(63,214,111,.08);font-size:13px}
+.onlineBadge>span{width:9px;height:9px;border-radius:50%;background:#3fd66f;box-shadow:0 0 10px rgba(63,214,111,.7)}
+.adminOnlinePanel{margin-bottom:16px}.adminOnlineHead{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.adminOnlineHead h3{margin:3px 0 10px}.adminOnlineHead>strong{font-size:28px}
+.onlineUserRow{display:flex;align-items:center;gap:8px;padding:9px 0;border-top:1px solid rgba(255,255,255,.08)}
+`;document.head.appendChild(s)})();
