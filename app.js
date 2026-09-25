@@ -1,4 +1,54 @@
 const U='https://kfysmqwhpzemoknqakzn.supabase.co',K='sb_publishable_UNdKtQ2mCMaaWcMK0FvVIA_r8cNIUl-';const db=supabase.createClient(U,K);const $=id=>document.getElementById(id);let user=null,picks={},filter='all',profile=null,isAdmin=false,results={},goalEvents={},adminMatchFilter='all',adminUsersCache=[],presenceChannel=null,onlineUsers={};const names={okregowa:'Liga Okręgowa Skoczów–Żywiec • kolejka 8',a:'A Klasa Żywiec • kolejka 7',b:'B Klasa Żywiec • kolejka 7'};async function login(){message.textContent='Logowanie...';const{data,error}=await db.auth.signInWithPassword({email:email.value.trim(),password:password.value});if(error){message.textContent='❌ '+error.message;return}await enter(data.user)}async function register(){
+
+
+/* =========================================================
+   DZIKI TYPER — TERMINARZ Z SUPABASE v2
+   dziki_schedule jest źródłem prawdy dla meczów ligowych.
+   ========================================================= */
+function scheduleLabel(kickoff){
+  if(!kickoff)return 'Termin do potwierdzenia';
+  return new Date(kickoff).toLocaleString('pl-PL',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}).replace(',',' •');
+}
+function localInputValue(kickoff){
+  if(!kickoff)return '';
+  const d=new Date(kickoff),z=new Date(d.getTime()-d.getTimezoneOffset()*60000);
+  return z.toISOString().slice(0,16);
+}
+async function loadScheduleFromDb(){
+  const{data,error}=await db.from('dziki_schedule').select('match_id,league_code,league_name,round,match_no,home_team,away_team,kickoff,status').order('league_code').order('round').order('match_no');
+  if(error){console.warn('dziki_schedule:',error.message);return false}
+  if(!data?.length)return false;
+  for(let i=MATCHES.length-1;i>=0;i--)if(!MATCHES[i]?._custom)MATCHES.splice(i,1);
+  data.forEach(x=>MATCHES.push({
+    id:x.match_id,league:x.league_code==='o'?'okregowa':x.league_code,
+    home:x.home_team,away:x.away_team,kickoff:x.kickoff,label:scheduleLabel(x.kickoff),
+    scheduleStatus:x.status||'scheduled',round:x.round,matchNo:x.match_no
+  }));
+  return true;
+}
+async function editScheduledMatch(id){
+  if(!isAdmin)return;
+  const m=MATCHES.find(x=>x.id===id&&!x._custom);if(!m)return;
+  const home=prompt('Gospodarz:',m.home);if(home===null)return;
+  const away=prompt('Gość:',m.away);if(away===null)return;
+  const raw=prompt('Data i godzina (RRRR-MM-DDTHH:MM):',localInputValue(m.kickoff));if(raw===null)return;
+  const status=prompt('Status: scheduled / postponed / cancelled / finished',m.scheduleStatus||'scheduled');if(status===null)return;
+  if(!home.trim()||!away.trim()){alert('Nazwy drużyn nie mogą być puste.');return}
+  if(home.trim().toLowerCase()===away.trim().toLowerCase()){alert('Gospodarz i gość muszą być różnymi drużynami.');return}
+  const allowed=['scheduled','postponed','cancelled','finished'];
+  if(!allowed.includes(status.trim())){alert('Nieprawidłowy status.');return}
+  let kickoff=null;
+  if(raw.trim()){
+    const d=new Date(raw);if(Number.isNaN(d.getTime())){alert('Nieprawidłowa data lub godzina.');return}
+    kickoff=d.toISOString();
+  }
+  const swapped=home.trim()===m.away&&away.trim()===m.home;
+  if(swapped&&!confirm('Odwracasz gospodarza i gościa. Typy użytkowników zostaną automatycznie odwrócone (np. 2:1 → 1:2), aby zachować ich znaczenie. Kontynuować?'))return;
+  const{error}=await db.rpc('admin_update_schedule_match',{p_match_id:id,p_home_team:home.trim(),p_away_team:away.trim(),p_kickoff:kickoff,p_status:status.trim()});
+  if(error){alert('Nie udało się zapisać meczu: '+error.message);return}
+  await loadScheduleFromDb();await loadPicks();render();await loadAdmin();
+  alert('✓ Mecz został zaktualizowany.');
+}
  const n=$('regNickname').value.trim();
  if(n.length<2){message.textContent='❌ Wpisz nick (minimum 2 znaki).';return}
  if(n.length>30){message.textContent='❌ Nick może mieć maksymalnie 30 znaków.';return}
@@ -94,7 +144,7 @@ async function loadAdmin(){
     const status=r.status||'scheduled';
     const label=status==='live'?'🔴 LIVE':status==='finished'?'✓ Zakończony':'◷ Przed meczem';
     const score=status==='scheduled'?'—':`${r.home_score??0} : ${r.away_score??0}`;
-    return `<div class="adminMatchRow" data-status="${status}"><button class="adminMatchSummary" onclick="toggleAdminMatch('${m.id}')"><span class="adminMatchMain"><b>${esc(m.home)} — ${esc(m.away)}</b><small>🗓 ${esc(m.label)}</small></span><span class="adminMatchResult"><strong>${score}</strong><em class="statusPill ${status}">${label}</em></span><span class="adminChevron" id="ac-${m.id}">⌄</span></button><div id="ae-${m.id}" class="adminMatchEdit hidden"><div class="adminEditGrid"><label>Status<select id="rs-${m.id}"><option value="scheduled" ${status==='scheduled'?'selected':''}>Przed meczem</option><option value="live" ${status==='live'?'selected':''}>🔴 Na żywo</option><option value="finished" ${status==='finished'?'selected':''}>Koniec</option></select></label><label>Minuta<input id="rm-${m.id}" class="minute" type="number" min="1" max="130" inputmode="numeric" placeholder="min" value="${r.minute??''}"></label></div><div class="adminScoreEdit"><input id="rh-${m.id}" type="number" min="0" inputmode="numeric" value="${r.home_score??''}" placeholder="0"><span>:</span><input id="ra-${m.id}" type="number" min="0" inputmode="numeric" value="${r.away_score??''}" placeholder="0"><button onclick="saveResult('${m.id}')">💾 Zapisz</button></div><div class="goalAdmin"><h4>⚽ Strzelcy bramek</h4><div class="goalAdd"><select id="gt-${m.id}"><option value="home">${esc(m.home)}</option><option value="away">${esc(m.away)}</option></select><input id="gp-${m.id}" placeholder="Imię i nazwisko"><input id="gm-${m.id}" type="number" min="1" max="130" placeholder="min"><button onclick="addGoal('${m.id}')">⚽ Dodaj bramkę</button></div><div class="goalAdminList">${(goalEvents[m.id]||[]).map(g=>`<div><span>⚽ ${g.minute}' ${esc(g.player)}</span><button class="dangerGhost" onclick="deleteGoal(${g.id})">🗑</button></div>`).join('')}</div></div>${m._custom?`<div class="customMatchActions"><button onclick="editCustomMatch(${Number(m._customId)})">✏️ Edytuj mecz</button>${status==='finished'?`<button onclick="archiveCustomMatch(${Number(m._customId)})">📦 Archiwizuj mecz</button>`:`<button class="dangerGhost" onclick="deleteCustomMatch(${Number(m._customId)})">🗑 Usuń mecz</button>`}</div>`:''}</div></div>`;
+    return `<div class="adminMatchRow" data-status="${status}"><button class="adminMatchSummary" onclick="toggleAdminMatch('${m.id}')"><span class="adminMatchMain"><b>${esc(m.home)} — ${esc(m.away)}</b><small>🗓 ${esc(m.label)}</small></span><span class="adminMatchResult"><strong>${score}</strong><em class="statusPill ${status}">${label}</em></span><span class="adminChevron" id="ac-${m.id}">⌄</span></button><div id="ae-${m.id}" class="adminMatchEdit hidden"><div class="adminEditGrid"><label>Status<select id="rs-${m.id}"><option value="scheduled" ${status==='scheduled'?'selected':''}>Przed meczem</option><option value="live" ${status==='live'?'selected':''}>🔴 Na żywo</option><option value="finished" ${status==='finished'?'selected':''}>Koniec</option></select></label><label>Minuta<input id="rm-${m.id}" class="minute" type="number" min="1" max="130" inputmode="numeric" placeholder="min" value="${r.minute??''}"></label></div><div class="adminScoreEdit"><input id="rh-${m.id}" type="number" min="0" inputmode="numeric" value="${r.home_score??''}" placeholder="0"><span>:</span><input id="ra-${m.id}" type="number" min="0" inputmode="numeric" value="${r.away_score??''}" placeholder="0"><button onclick="saveResult('${m.id}')">💾 Zapisz</button></div><div class="goalAdmin"><h4>⚽ Strzelcy bramek</h4><div class="goalAdd"><select id="gt-${m.id}"><option value="home">${esc(m.home)}</option><option value="away">${esc(m.away)}</option></select><input id="gp-${m.id}" placeholder="Imię i nazwisko"><input id="gm-${m.id}" type="number" min="1" max="130" placeholder="min"><button onclick="addGoal('${m.id}')">⚽ Dodaj bramkę</button></div><div class="goalAdminList">${(goalEvents[m.id]||[]).map(g=>`<div><span>⚽ ${g.minute}' ${esc(g.player)}</span><button class="dangerGhost" onclick="deleteGoal(${g.id})">🗑</button></div>`).join('')}</div></div>${!m._custom?`<div class="customMatchActions"><button onclick="editScheduledMatch('${m.id}')">✏️ Edytuj termin / drużyny</button></div>`:''}${m._custom?`<div class="customMatchActions"><button onclick="editCustomMatch(${Number(m._customId)})">✏️ Edytuj mecz</button>${status==='finished'?`<button onclick="archiveCustomMatch(${Number(m._customId)})">📦 Archiwizuj mecz</button>`:`<button class="dangerGhost" onclick="deleteCustomMatch(${Number(m._customId)})">🗑 Usuń mecz</button>`}</div>`:''}</div></div>`;
   }).join(''):'<div class="adminEmpty">Brak meczów w tym filtrze.</div>';
 }
 function adminSection(name){
@@ -584,7 +634,7 @@ async function saveWeekFeature(){
 const _oldLoadAdminUsers=loadAdminUsers;
 loadAdminUsers=async function(){await _oldLoadAdminUsers(); if(isAdmin){ensureWeekUI();renderWeekAdmin();}};
 const _oldEnter=enter;
-enter=async function(u){await loadCustomMatches();await _oldEnter(u);ensureCustomMatchAdminUI();ensureWeekUI();await loadWeekFeature();};
+enter=async function(u){await loadScheduleFromDb();await loadCustomMatches();await _oldEnter(u);ensureCustomMatchAdminUI();ensureWeekUI();await loadWeekFeature();};
 const _oldShowTab=showTab;
 showTab=async function(t){
   if(t!=='week')return _oldShowTab(t);
