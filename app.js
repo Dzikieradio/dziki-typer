@@ -64,6 +64,78 @@ function ensureAdminOnlineUI(){
  renderOnline();
 }
 
+
+/* =========================================================
+   DZIKI TYPER — EDYCJA DATY/GODZINY MECZU
+   Tylko nadpisuje kickoff po match_id. Nie zmienia drużyn,
+   match_id, typów, wyników ani logowania.
+   ========================================================= */
+function fixtureDateLabel(kickoff){
+  if(!kickoff)return 'Termin do potwierdzenia';
+  return new Date(kickoff).toLocaleString('pl-PL',{
+    day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'
+  }).replace(',',' •');
+}
+
+function fixtureLocalInput(kickoff){
+  if(!kickoff)return '';
+  const d=new Date(kickoff);
+  const local=new Date(d.getTime()-d.getTimezoneOffset()*60000);
+  return local.toISOString().slice(0,16);
+}
+
+async function loadMatchTimeOverrides(){
+  const{data,error}=await db.from('match_time_overrides').select('match_id,kickoff');
+  if(error){
+    console.warn('match_time_overrides:',error.message);
+    return;
+  }
+  (data||[]).forEach(x=>{
+    const m=MATCHES.find(v=>v.id===x.match_id&&!v._custom);
+    if(!m)return;
+    m.kickoff=x.kickoff;
+    m.label=fixtureDateLabel(x.kickoff);
+  });
+}
+
+async function editMatchTime(id){
+  if(!isAdmin)return;
+  const m=MATCHES.find(x=>x.id===id&&!x._custom);
+  if(!m)return;
+
+  const raw=prompt('Nowa data i godzina (RRRR-MM-DDTHH:MM):',fixtureLocalInput(m.kickoff));
+  if(raw===null)return;
+
+  const value=raw.trim();
+  if(!value){
+    alert('Podaj datę i godzinę.');
+    return;
+  }
+
+  const d=new Date(value);
+  if(Number.isNaN(d.getTime())){
+    alert('Nieprawidłowa data lub godzina.');
+    return;
+  }
+
+  const{error}=await db.from('match_time_overrides').upsert({
+    match_id:id,
+    kickoff:d.toISOString(),
+    updated_at:new Date().toISOString()
+  },{onConflict:'match_id'});
+
+  if(error){
+    alert('Nie udało się zapisać terminu: '+error.message);
+    return;
+  }
+
+  m.kickoff=d.toISOString();
+  m.label=fixtureDateLabel(m.kickoff);
+  render();
+  await loadAdmin();
+  alert('✓ Data i godzina meczu zostały zapisane.');
+}
+
 async function loadPicks(){const{data,error}=await db.from('picks').select('match_id,home_score,away_score').eq('user_id',user.id);if(error){$('status').innerHTML='<div class="warn">⚠️ Nie udało się pobrać typów.</div>';return}picks={};(data||[]).forEach(p=>picks[p.match_id]=p)}async function savePick(id){const m=MATCHES.find(x=>x.id===id);if(locked(m))return;const h=Number($('h-'+id).value),a=Number($('a-'+id).value);if(!Number.isInteger(h)||!Number.isInteger(a)||h<0||a<0){alert('Wpisz oba wyniki jako liczby 0 lub większe.');return}const{error}=await db.from('picks').upsert({user_id:user.id,match_id:id,home_score:h,away_score:a},{onConflict:'user_id,match_id'});if(error){alert('Nie udało się zapisać: '+error.message);return}picks[id]={match_id:id,home_score:h,away_score:a};render()}function liveMinute(r){
  if(!r||r.status!=='live'||r.minute==null)return r?.minute??null;
  const base=Number(r.minute),saved=new Date(r.updated_at).getTime();
@@ -94,7 +166,7 @@ async function loadAdmin(){
     const status=r.status||'scheduled';
     const label=status==='live'?'🔴 LIVE':status==='finished'?'✓ Zakończony':'◷ Przed meczem';
     const score=status==='scheduled'?'—':`${r.home_score??0} : ${r.away_score??0}`;
-    return `<div class="adminMatchRow" data-status="${status}"><button class="adminMatchSummary" onclick="toggleAdminMatch('${m.id}')"><span class="adminMatchMain"><b>${esc(m.home)} — ${esc(m.away)}</b><small>🗓 ${esc(m.label)}</small></span><span class="adminMatchResult"><strong>${score}</strong><em class="statusPill ${status}">${label}</em></span><span class="adminChevron" id="ac-${m.id}">⌄</span></button><div id="ae-${m.id}" class="adminMatchEdit hidden"><div class="adminEditGrid"><label>Status<select id="rs-${m.id}"><option value="scheduled" ${status==='scheduled'?'selected':''}>Przed meczem</option><option value="live" ${status==='live'?'selected':''}>🔴 Na żywo</option><option value="finished" ${status==='finished'?'selected':''}>Koniec</option></select></label><label>Minuta<input id="rm-${m.id}" class="minute" type="number" min="1" max="130" inputmode="numeric" placeholder="min" value="${r.minute??''}"></label></div><div class="adminScoreEdit"><input id="rh-${m.id}" type="number" min="0" inputmode="numeric" value="${r.home_score??''}" placeholder="0"><span>:</span><input id="ra-${m.id}" type="number" min="0" inputmode="numeric" value="${r.away_score??''}" placeholder="0"><button onclick="saveResult('${m.id}')">💾 Zapisz</button></div><div class="goalAdmin"><h4>⚽ Strzelcy bramek</h4><div class="goalAdd"><select id="gt-${m.id}"><option value="home">${esc(m.home)}</option><option value="away">${esc(m.away)}</option></select><input id="gp-${m.id}" placeholder="Imię i nazwisko"><input id="gm-${m.id}" type="number" min="1" max="130" placeholder="min"><button onclick="addGoal('${m.id}')">⚽ Dodaj bramkę</button></div><div class="goalAdminList">${(goalEvents[m.id]||[]).map(g=>`<div><span>⚽ ${g.minute}' ${esc(g.player)}</span><button class="dangerGhost" onclick="deleteGoal(${g.id})">🗑</button></div>`).join('')}</div></div>${m._custom?`<div class="customMatchActions"><button onclick="editCustomMatch(${Number(m._customId)})">✏️ Edytuj mecz</button>${status==='finished'?`<button onclick="archiveCustomMatch(${Number(m._customId)})">📦 Archiwizuj mecz</button>`:`<button class="dangerGhost" onclick="deleteCustomMatch(${Number(m._customId)})">🗑 Usuń mecz</button>`}</div>`:''}</div></div>`;
+    return `<div class="adminMatchRow" data-status="${status}"><button class="adminMatchSummary" onclick="toggleAdminMatch('${m.id}')"><span class="adminMatchMain"><b>${esc(m.home)} — ${esc(m.away)}</b><small>🗓 ${esc(m.label)}</small></span><span class="adminMatchResult"><strong>${score}</strong><em class="statusPill ${status}">${label}</em></span><span class="adminChevron" id="ac-${m.id}">⌄</span></button><div id="ae-${m.id}" class="adminMatchEdit hidden"><div class="adminEditGrid"><label>Status<select id="rs-${m.id}"><option value="scheduled" ${status==='scheduled'?'selected':''}>Przed meczem</option><option value="live" ${status==='live'?'selected':''}>🔴 Na żywo</option><option value="finished" ${status==='finished'?'selected':''}>Koniec</option></select></label><label>Minuta<input id="rm-${m.id}" class="minute" type="number" min="1" max="130" inputmode="numeric" placeholder="min" value="${r.minute??''}"></label></div><div class="adminScoreEdit"><input id="rh-${m.id}" type="number" min="0" inputmode="numeric" value="${r.home_score??''}" placeholder="0"><span>:</span><input id="ra-${m.id}" type="number" min="0" inputmode="numeric" value="${r.away_score??''}" placeholder="0"><button onclick="saveResult('${m.id}')">💾 Zapisz</button></div><div class="goalAdmin"><h4>⚽ Strzelcy bramek</h4><div class="goalAdd"><select id="gt-${m.id}"><option value="home">${esc(m.home)}</option><option value="away">${esc(m.away)}</option></select><input id="gp-${m.id}" placeholder="Imię i nazwisko"><input id="gm-${m.id}" type="number" min="1" max="130" placeholder="min"><button onclick="addGoal('${m.id}')">⚽ Dodaj bramkę</button></div><div class="goalAdminList">${(goalEvents[m.id]||[]).map(g=>`<div><span>⚽ ${g.minute}' ${esc(g.player)}</span><button class="dangerGhost" onclick="deleteGoal(${g.id})">🗑</button></div>`).join('')}</div></div>${!m._custom?`<div class="customMatchActions"><button onclick="editMatchTime('${m.id}')">🗓 Edytuj datę / godzinę</button></div>`:''}${m._custom?`<div class="customMatchActions"><button onclick="editCustomMatch(${Number(m._customId)})">✏️ Edytuj mecz</button>${status==='finished'?`<button onclick="archiveCustomMatch(${Number(m._customId)})">📦 Archiwizuj mecz</button>`:`<button class="dangerGhost" onclick="deleteCustomMatch(${Number(m._customId)})">🗑 Usuń mecz</button>`}</div>`:''}</div></div>`;
   }).join(''):'<div class="adminEmpty">Brak meczów w tym filtrze.</div>';
 }
 function adminSection(name){
@@ -584,7 +656,7 @@ async function saveWeekFeature(){
 const _oldLoadAdminUsers=loadAdminUsers;
 loadAdminUsers=async function(){await _oldLoadAdminUsers(); if(isAdmin){ensureWeekUI();renderWeekAdmin();}};
 const _oldEnter=enter;
-enter=async function(u){await loadCustomMatches();await _oldEnter(u);ensureCustomMatchAdminUI();ensureWeekUI();await loadWeekFeature();};
+enter=async function(u){await loadCustomMatches();await loadMatchTimeOverrides();await _oldEnter(u);ensureCustomMatchAdminUI();ensureWeekUI();await loadWeekFeature();};
 const _oldShowTab=showTab;
 showTab=async function(t){
   if(t!=='week')return _oldShowTab(t);
