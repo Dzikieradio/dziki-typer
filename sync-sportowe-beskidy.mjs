@@ -3,8 +3,8 @@ import { createHash } from 'node:crypto';
 import * as cheerio from 'cheerio';
 
 const SEASON_START_YEAR = 2026;
-const PAST_DAYS = 10;
-const FUTURE_DAYS = 60;
+const PAST_DAYS = 3;
+const FUTURE_DAYS = 21;
 
 const SOURCES = [
   { league: 'okregowa', url: 'https://sportowebeskidy.pl/rozgrywki/liga-okregowa-zywiecko-skoczowska-2' },
@@ -51,6 +51,12 @@ function localIso(day, time) {
   const [hour, minute] = time.split(':').map(Number);
   const pad = value => String(value).padStart(2, '0');
   return `${day.year}-${pad(day.month + 1)}-${pad(day.day)}T${pad(hour)}:${pad(minute)}:00`;
+}
+
+function localDate(day) {
+  if (!day) return null;
+  const pad = value => String(value).padStart(2, '0');
+  return `${day.year}-${pad(day.month + 1)}-${pad(day.day)}`;
 }
 
 function formatLabel(round, kickoff) {
@@ -119,6 +125,7 @@ function parseSchedule(html, config, ids) {
       home,
       away,
       kickoff,
+      date: localDate(day),
       label: formatLabel(round, kickoff),
       source: config.url
     });
@@ -129,8 +136,9 @@ function parseSchedule(html, config, ids) {
 }
 
 function inWindow(match, now) {
-  if (!match.kickoff) return true;
-  const stamp = new Date(`${match.kickoff}+02:00`).getTime();
+  const sourceDate = match.kickoff || (match.date ? `${match.date}T12:00:00` : null);
+  if (!sourceDate) return false;
+  const stamp = new Date(`${sourceDate}+02:00`).getTime();
   const min = now - PAST_DAYS * 86400000;
   const max = now + FUTURE_DAYS * 86400000;
   return stamp >= min && stamp <= max;

@@ -12,7 +12,7 @@ GitHub Actions uruchamia synchronizację co 3 godziny i zapisuje zmiany w `match
 ## Zabezpieczenia
 
 - aktualizacja jest przerywana, jeśli strona źródłowa nie zwróci tabeli lub wystarczającej liczby meczów;
-- pobierane są spotkania z ostatnich 10 i kolejnych 60 dni;
+- pobierane są spotkania z ostatnich 3 i kolejnych 21 dni, aby lista była wygodna na telefonie;
 - mecze bez ustalonej godziny otrzymują status „Termin do potwierdzenia”;
 - raport ostatniego pobrania trafia do `data/sync-report.json`;
 - skrypt nie usuwa ani nie modyfikuje typów i wyników zapisanych w Supabase.
