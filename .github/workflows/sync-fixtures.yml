@@ -1,0 +1,44 @@
+name: Aktualizacja terminarzy
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "17 */3 * * *"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: sync-fixtures
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Pobierz repozytorium
+        uses: actions/checkout@v4
+
+      - name: Ustaw Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Zainstaluj parser
+        run: npm install --no-package-lock
+
+      - name: Pobierz i sprawdź terminarze
+        run: npm run sync:fixtures
+
+      - name: Zapisz zmiany
+        run: |
+          if git diff --quiet -- matches.js data/sync-report.json; then
+            echo "Brak zmian w terminarzach."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add matches.js data/sync-report.json
+          git commit -m "Automatyczna aktualizacja terminarzy"
+          git push
