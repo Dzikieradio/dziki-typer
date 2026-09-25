@@ -204,3 +204,19 @@ button{border:0;border-radius:11px;background:var(--accent);color:#111;font-weig
 .customMatchAdmin{background:linear-gradient(145deg,#191f25,#10151a);border:1px solid #4b4224;border-radius:18px;padding:16px;margin:0 0 16px;box-shadow:inset 0 0 28px rgba(241,181,28,.04)}
 .customMatchHead h3{margin:5px 0 0}.customMatchGrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}.customMatchGrid label{color:#aeb7c2;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.45px}.customMatchGrid input{margin:5px 0 0}.customAddBtn{width:100%;margin-top:11px;min-height:48px}.customMatchActions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:13px;padding-top:13px;border-top:1px solid #303842}.customMatchActions .dangerGhost{background:#2a1b1e;color:#ff8585;border:1px solid #633036}
 @media(max-width:520px){.customMatchGrid{grid-template-columns:1fr}.customMatchActions{grid-template-columns:1fr 1fr}}
+/* Kolorystyczne rozroznienie lig */
+.filters button[data-f="okregowa"]{border:1px solid #f5b51b;color:#ffd86b;background:rgba(245,181,27,.12)}
+.filters button[data-f="a"]{border:1px solid #38bdf8;color:#7dd3fc;background:rgba(56,189,248,.12)}
+.filters button[data-f="b"]{border:1px solid #4ade80;color:#86efac;background:rgba(74,222,128,.12)}
+.filters button[data-f="okregowa"].active{background:#f5b51b;color:#17120a}
+.filters button[data-f="a"].active{background:#0284c7;color:#fff}
+.filters button[data-f="b"].active{background:#16a34a;color:#fff}
+.league{padding:11px 14px;border-radius:12px;border-left:5px solid #77818c;background:#171c22}
+.league-okregowa{border-color:#f5b51b;background:linear-gradient(90deg,rgba(245,181,27,.22),#171c22)}
+.league-a{border-color:#38bdf8;background:linear-gradient(90deg,rgba(56,189,248,.20),#171c22)}
+.league-b{border-color:#4ade80;background:linear-gradient(90deg,rgba(74,222,128,.18),#171c22)}
+.league-cup{border-color:#c084fc;background:linear-gradient(90deg,rgba(192,132,252,.18),#171c22)}
+.match.league-card-okregowa{border-left:4px solid #f5b51b}
+.match.league-card-a{border-left:4px solid #38bdf8}
+.match.league-card-b{border-left:4px solid #4ade80}
+.match.league-card-cup{border-left:4px solid #c084fc}
