@@ -675,3 +675,47 @@ showTab=async function(t){
 .adminOnlineHead h3{margin:3px 0 10px}.adminOnlineHead>strong{font-size:28px}
 .onlineUserRow{display:flex;align-items:center;gap:8px;padding:9px 0;border-top:1px solid rgba(255,255,255,.08)}
 `;document.head.appendChild(s)})();
+/* =========================================================
+   DZIKI TYPER — EDYCJA TERMINU U GÓRY PANELU ADMINA
+   ========================================================= */
+
+(function () {
+  const oldToggleAdminMatch = toggleAdminMatch;
+
+  toggleAdminMatch = function (id) {
+    oldToggleAdminMatch(id);
+
+    const box = document.getElementById('ae-' + id);
+    if (!box) return;
+
+    const match = MATCHES.find(m => m.id === id);
+
+    // Dodatkowe mecze mają własną edycję.
+    if (!match || match._custom) return;
+
+    // Nie dodawaj drugi raz.
+    if (document.getElementById('time-edit-' + id)) return;
+
+    const wrap = document.createElement('div');
+    wrap.id = 'time-edit-' + id;
+    wrap.style.margin = '0 0 14px 0';
+
+    wrap.innerHTML = `
+      <button
+        type="button"
+        onclick="editMatchTime('${id}')"
+        style="
+          width:100%;
+          padding:13px 16px;
+          font-weight:800;
+          font-size:15px;
+          cursor:pointer;
+        "
+      >
+        🗓 Edytuj datę / godzinę
+      </button>
+    `;
+
+    box.prepend(wrap);
+  };
+})();
