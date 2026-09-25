@@ -1,23 +1,23 @@
 {
-  "generated_at": "2026-09-25T20:22:48.978Z",
+  "generated_at": "2026-09-25T20:26:05.184Z",
   "sources": [
     {
       "league": "okregowa",
       "url": "https://sportowebeskidy.pl/rozgrywki/liga-okregowa-zywiecko-skoczowska-2",
       "parsed": 91,
-      "selected": 49
+      "selected": 21
     },
     {
       "league": "a",
       "url": "https://sportowebeskidy.pl/rozgrywki/a-klasa-zywiec-6",
       "parsed": 78,
-      "selected": 48
+      "selected": 18
     },
     {
       "league": "b",
       "url": "https://sportowebeskidy.pl/rozgrywki/b-klasa-zywiec-6",
       "parsed": 56,
-      "selected": 38
+      "selected": 12
     },
     {
       "league": "cup",
@@ -27,9 +27,9 @@
     }
   ],
   "totals": {
-    "b": 38,
-    "okregowa": 49,
-    "a": 48,
-    "cup": 2
+    "cup": 2,
+    "b": 12,
+    "okregowa": 21,
+    "a": 18
   }
 }
