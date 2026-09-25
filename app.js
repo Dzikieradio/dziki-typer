@@ -103,21 +103,47 @@ async function editMatchTime(id){
   const m=MATCHES.find(x=>x.id===id&&!x._custom);
   if(!m)return;
 
-  const raw=prompt('Nowa data i godzina (RRRR-MM-DDTHH:MM):',fixtureLocalInput(m.kickoff));
-  if(raw===null)return;
+  $('matchTimeEditor')?.remove();
+  const current=fixtureLocalInput(m.kickoff);
+  const dateValue=current?current.slice(0,10):'';
+  const timeValue=current?current.slice(11,16):'';
+  const overlay=document.createElement('div');
+  overlay.id='matchTimeEditor';
+  overlay.style.cssText='position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;padding:18px;background:rgba(0,0,0,.72)';
+  overlay.innerHTML=`<div style="width:min(430px,100%);padding:22px;border-radius:18px;background:#151515;color:#fff;box-shadow:0 20px 60px rgba(0,0,0,.55)">
+    <h3 style="margin:0 0 8px">🗓 Edytuj termin meczu</h3>
+    <p style="margin:0 0 18px;opacity:.8">${esc(m.home)} — ${esc(m.away)}</p>
+    <label style="display:block;margin-bottom:14px;font-weight:700">Data
+      <input id="matchDateInput" type="date" value="${dateValue}" style="display:block;width:100%;box-sizing:border-box;margin-top:7px;padding:13px;font-size:18px">
+    </label>
+    <label style="display:block;margin-bottom:18px;font-weight:700">Godzina
+      <input id="matchTimeInput" type="time" value="${timeValue}" step="60" style="display:block;width:100%;box-sizing:border-box;margin-top:7px;padding:13px;font-size:18px">
+    </label>
+    <div id="matchTimeError" style="min-height:20px;margin-bottom:10px;color:#ff8b8b"></div>
+    <div style="display:flex;gap:10px">
+      <button id="saveMatchTimeBtn" type="button" style="flex:1;padding:13px;font-weight:800">💾 Zapisz</button>
+      <button id="cancelMatchTimeBtn" type="button" style="flex:1;padding:13px">Anuluj</button>
+    </div>
+  </div>`;
+  document.body.appendChild(overlay);
+  $('cancelMatchTimeBtn').onclick=()=>overlay.remove();
+  overlay.onclick=e=>{if(e.target===overlay)overlay.remove()};
+  $('saveMatchTimeBtn').onclick=()=>saveMatchTime(id);
+}
 
-  const value=raw.trim();
-  if(!value){
-    alert('Podaj datę i godzinę.');
-    return;
-  }
+async function saveMatchTime(id){
+  if(!isAdmin)return;
+  const date=$('matchDateInput')?.value;
+  const time=$('matchTimeInput')?.value;
+  const errorBox=$('matchTimeError');
+  const saveButton=$('saveMatchTimeBtn');
+  if(!date||!time){if(errorBox)errorBox.textContent='Wybierz datę oraz godzinę.';return}
 
-  const d=new Date(value);
-  if(Number.isNaN(d.getTime())){
-    alert('Nieprawidłowa data lub godzina.');
-    return;
-  }
+  const d=new Date(`${date}T${time}:00`);
+  if(Number.isNaN(d.getTime())){if(errorBox)errorBox.textContent='Nieprawidłowa data lub godzina.';return}
 
+  if(saveButton){saveButton.disabled=true;saveButton.textContent='Zapisywanie…'}
+  if(errorBox)errorBox.textContent='';
   const{error}=await db.from('match_time_overrides').upsert({
     match_id:id,
     kickoff:d.toISOString(),
@@ -125,12 +151,14 @@ async function editMatchTime(id){
   },{onConflict:'match_id'});
 
   if(error){
-    alert('Nie udało się zapisać terminu: '+error.message);
+    if(errorBox)errorBox.textContent='Nie udało się zapisać terminu: '+error.message;
+    if(saveButton){saveButton.disabled=false;saveButton.textContent='💾 Zapisz'}
     return;
   }
 
-  m.kickoff=d.toISOString();
-  m.label=fixtureDateLabel(m.kickoff);
+  const m=MATCHES.find(x=>x.id===id&&!x._custom);
+  if(m){m.kickoff=d.toISOString();m.label=fixtureDateLabel(m.kickoff)}
+  $('matchTimeEditor')?.remove();
   render();
   await loadAdmin();
   alert('✓ Data i godzina meczu zostały zapisane.');
