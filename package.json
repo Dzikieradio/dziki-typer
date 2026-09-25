@@ -1,0 +1,11 @@
+{
+  "name": "dziki-typer-fixture-sync",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "sync:fixtures": "node sync-sportowe-beskidy.mjs"
+  },
+  "dependencies": {
+    "cheerio": "1.1.2"
+  }
+}
