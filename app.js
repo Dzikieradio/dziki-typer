@@ -424,10 +424,15 @@ async function sendChatMessage(){
   if(!profile?.nickname||profile.nickname.trim().length<2){alert('Najpierw ustaw swój nick w profilu.');return}
   if(!text){msg.textContent='Wpisz wiadomość.';return}
   if(text.length>500){msg.textContent='Wiadomość może mieć maksymalnie 500 znaków.';return}
+  const broadcast=/(^|\s)@wszyscy(?=\s|$|[,.!?;:])/iu.test(text);
+  if(broadcast&&!isAdmin){msg.textContent='❌ Komendy @wszyscy może używać tylko administrator.';return}
+  if(broadcast&&!confirm('Wysłać tę wiadomość i powiadomienie do wszystkich użytkowników Dziki Typer?'))return;
   msg.textContent='Wysyłanie...';
-  const{error}=await db.rpc('send_chat_message',{p_message:text});
+  const{error}=broadcast
+    ?await db.rpc('admin_broadcast_chat',{p_message:text})
+    :await db.rpc('send_chat_message',{p_message:text});
   if(error){msg.textContent='❌ '+error.message;return}
-  input.value='';msg.textContent='✓ Wysłano.';
+  input.value='';msg.textContent=broadcast?'✓ Wysłano powiadomienie do wszystkich.':'✓ Wysłano.';
   await loadChat();await loadNotifications();
 }
 
