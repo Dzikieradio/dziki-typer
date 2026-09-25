@@ -1,0 +1,35 @@
+{
+  "generated_at": "2026-09-25T20:22:48.978Z",
+  "sources": [
+    {
+      "league": "okregowa",
+      "url": "https://sportowebeskidy.pl/rozgrywki/liga-okregowa-zywiecko-skoczowska-2",
+      "parsed": 91,
+      "selected": 49
+    },
+    {
+      "league": "a",
+      "url": "https://sportowebeskidy.pl/rozgrywki/a-klasa-zywiec-6",
+      "parsed": 78,
+      "selected": 48
+    },
+    {
+      "league": "b",
+      "url": "https://sportowebeskidy.pl/rozgrywki/b-klasa-zywiec-6",
+      "parsed": 56,
+      "selected": 38
+    },
+    {
+      "league": "cup",
+      "url": "https://sportowebeskidy.pl/rozgrywki/poltent-puchar-polski-podokreg-zywiec",
+      "parsed": 26,
+      "selected": 2
+    }
+  ],
+  "totals": {
+    "b": 38,
+    "okregowa": 49,
+    "a": 48,
+    "cup": 2
+  }
+}
