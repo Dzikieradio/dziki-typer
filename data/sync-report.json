@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-09-29T09:33:52.680Z",
+  "generated_at": "2026-09-29T12:39:17.460Z",
   "sources": [
     {
       "league": "okregowa",
@@ -17,7 +17,7 @@
       "league": "b",
       "url": "https://sportowebeskidy.pl/rozgrywki/b-klasa-zywiec-6",
       "parsed": 56,
-      "selected": 16
+      "selected": 15
     },
     {
       "league": "cup",
@@ -27,7 +27,7 @@
     }
   ],
   "totals": {
-    "b": 16,
+    "b": 15,
     "okregowa": 28,
     "a": 24,
     "cup": 1
