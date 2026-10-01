@@ -777,3 +777,82 @@ showTab=async function(t){
     box.prepend(wrap);
   };
 })();
+
+
+/* =========================================================
+   DZIKI TYPER — CMS / EMBED STARTUP
+   Bezpieczny punkt wejścia pod przyszłe SSO.
+   Nie przyjmuje access/refresh tokenów z query string.
+   ========================================================= */
+const CMS_EMBED_MODE = new URLSearchParams(location.search).get('embed') === '1' || window.self !== window.top;
+
+function setEmbedMode(){
+  if(!CMS_EMBED_MODE)return;
+  document.documentElement.classList.add('cms-embed');
+  document.body.classList.add('cms-embed');
+}
+
+async function safeStep(label,fn,timeout=10000){
+  try{
+    return await withTimeout(Promise.resolve().then(fn),timeout,label);
+  }catch(e){
+    console.warn('[Dziki Typer] '+label+':',e);
+    return null;
+  }
+}
+
+const _cmsBaseEnter=enter;
+enter=async function(u){
+  setEmbedMode();
+  user=u;
+
+  // Krytyczne minimum: użytkownik i profil. Pozostałe moduły nie mogą
+  // zatrzymać wejścia do aplikacji przy chwilowej awarii REST/Realtime.
+  const nickOk=await safeStep('Weryfikacja profilu',()=>ensureNickname(u),10000);
+  if(nickOk===false)return;
+
+  $('auth')?.classList.add('hidden');
+  $('app')?.classList.remove('hidden');
+
+  await safeStep('Profil',()=>loadProfile(),8000);
+  safeStep('Presence',()=>startPresence(),5000);
+  await safeStep('Typy',()=>loadPicks(),8000);
+  await safeStep('Wyniki',()=>loadResults(),8000);
+  await safeStep('Bramki',()=>loadGoals(),8000);
+  await safeStep('Uprawnienia',()=>checkAdmin(),8000);
+  await safeStep('Powiadomienia',()=>loadNotifications(),8000);
+
+  // Rozszerzenia ładowane przez późniejsze moduły aplikacji.
+  await safeStep('Dodatkowe mecze',()=>loadCustomMatches(),8000);
+  await safeStep('Terminy meczów',()=>loadMatchTimeOverrides(),8000);
+  ensureCustomMatchAdminUI();
+  ensureWeekUI();
+  await safeStep('Atrakcje kolejki',()=>loadWeekFeature(),8000);
+
+  render();
+};
+
+async function bootCmsSession(){
+  setEmbedMode();
+  try{
+    const{data,error}=await withTimeout(db.auth.getSession(),8000,'Odczyt sesji');
+    if(error)throw error;
+    if(data?.session?.user){
+      await enter(data.session.user);
+      return true;
+    }
+  }catch(e){
+    console.warn('[Dziki Typer] start sesji:',e);
+  }
+  return false;
+}
+
+window.DzikiTyperCMS={
+  mode:CMS_EMBED_MODE?'embedded':'standalone',
+  boot:bootCmsSession,
+  // Docelowe SSO ma ustanawiać sesję przez zaufany backend/OIDC.
+  // Celowo brak obsługi tokenów przekazywanych w URL.
+  acceptUrlTokens:false
+};
+
+setEmbedMode();
