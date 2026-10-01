@@ -481,22 +481,34 @@ async function loadRanking(){
  const list=rows.map((r,i)=>`<div class="rankingLine"><span class="rankingPlace">${i+1}</span><span class="rankingPlayer"><span class="rankingAvatar">${esc(av(r))}</span><span><b>${esc(r.nickname||'Bez nicku')}</b><small>${esc(rk(r))}</small></span></span><span class="rankingPlayed">${Number(r.finished_count??r.finished_picks??0)}</span><span class="rankingExact">${Number(r.exact_scores||0)}</span><span class="rankingPicks">${Number(r.picks_count||0)}</span><span class="rankingPoints">${Number(r.points||0)}</span></div>`).join('');
  $('ranking').innerHTML=`${weeklyHtml}${podium}<div class="rankingTitleBar"><b>📊 TABELA GENERALNA</b><small>Sezon 2026/2027</small></div><div class="rankingTable"><div class="rankingLine rankingHeader"><span>#</span><span>Gracz</span><span>M</span><span>🎯</span><span>Typy</span><span>Pkt</span></div>${list}</div><div class="rankingLegend">M — rozliczone mecze &nbsp; • &nbsp; 🎯 — dokładne wyniki &nbsp; • &nbsp; Pkt — punkty</div><div class="rankingFooter">👥 Ranking pokazuje maksymalnie 50 graczy.</div>`;
 }
+async function loadRoundSummary(){
+ const{data,error}=await db.rpc('round_summary');
+ const box=$('roundSummary'); if(!box)return;
+ if(error){box.innerHTML='<div class="rankingEmpty">Nie udało się pobrać podsumowania kolejki.</div>';return}
+ const rows=data||[]; if(!rows.length){box.innerHTML='<div class="rankingEmpty">Czekamy na zakończenie pierwszej kolejki weekendowej.</div>';return}
+ const fmt=d=>new Date(d+'T12:00:00').toLocaleDateString('pl-PL',{day:'2-digit',month:'2-digit',year:'numeric'});
+ const top=rows.slice(0,3);
+ box.innerHTML=`<div class="rankingTitleBar"><b>⚽ KOLEJKA ${fmt(rows[0].round_start)} – ${fmt(rows[0].round_end)}</b><small>do następnej kolejki</small></div><div class="rankingPodium">${top.map((r,i)=>`<div class="podiumCard podium${i+1}"><div class="podiumPlace">${i===0?'👑':i===1?'🥈':'🥉'} ${i+1}</div><div class="podiumAvatar">${esc(r.avatar||'👤')}</div><div class="podiumNick">${esc(r.nickname||'Bez nicku')}</div><div class="podiumStats"><span><b>${Number(r.points||0)}</b><small>pkt</small></span><span><b>${Number(r.exact_scores||0)}</b><small>dokładnych</small></span></div></div>`).join('')}</div><div class="rankingTable"><div class="rankingLine rankingHeader"><span>#</span><span>Gracz</span><span>M</span><span>🎯</span><span>Typy</span><span>Pkt</span></div>${rows.map((r,i)=>`<div class="rankingLine"><span class="rankingPlace">${i+1}</span><span class="rankingPlayer"><span class="rankingAvatar">${esc(r.avatar||'👤')}</span><span><b>${esc(r.nickname||'Bez nicku')}</b><small>${Number(r.correct_outcomes||0)} trafionych rozstrzygnięć</small></span></span><span class="rankingPlayed">${Number(r.picks_count||0)}</span><span class="rankingExact">${Number(r.exact_scores||0)}</span><span class="rankingPicks">${Number(r.picks_count||0)}</span><span class="rankingPoints">${Number(r.points||0)}</span></div>`).join('')}</div><div class="rankingLegend">👑 Wyniki kolejki pozostają tutaj do czasu rozegrania kolejnego weekendu.</div>`;
+}
 async function showTab(t){
-  const m=t==='matches',l=t==='live',r=t==='ranking',c=t==='chat',n=t==='notifications',a=t==='admin';
+  const m=t==='matches',l=t==='live',r=t==='ranking',w=t==='round',c=t==='chat',n=t==='notifications',a=t==='admin';
   $('matchesView').classList.toggle('hidden',!m);
   $('liveView').classList.toggle('hidden',!l);
   $('rankingView').classList.toggle('hidden',!r);
+  $('roundView').classList.toggle('hidden',!w);
   $('chatView').classList.toggle('hidden',!c);
   $('notificationsView').classList.toggle('hidden',!n);
   $('adminView').classList.toggle('hidden',!a);
   $('tabMatches').classList.toggle('active',m);
   $('tabLive').classList.toggle('active',l);
   $('tabRanking').classList.toggle('active',r);
+  $('tabRound').classList.toggle('active',w);
   $('tabChat').classList.toggle('active',c);
   $('tabNotifications').classList.toggle('active',n);
   $('tabAdmin').classList.toggle('active',a);
   if(l){await loadResults();await loadGoals();renderLive()}
   if(r)await loadRanking();
+  if(w)await loadRoundSummary();
   if(c)await loadChat();
   if(n)await loadNotifications();
   if(a){ensureCustomMatchAdminUI();ensureAdminOnlineUI();await loadAdmin();await loadAdminUsers();renderOnline();}
