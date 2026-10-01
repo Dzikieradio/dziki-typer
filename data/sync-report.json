@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-10-01T15:34:19.601Z",
+  "generated_at": "2026-10-01T18:38:08.839Z",
   "sources": [
     {
       "league": "okregowa",
@@ -28,8 +28,8 @@
   ],
   "totals": {
     "cup": 1,
-    "b": 12,
+    "okregowa": 21,
     "a": 18,
-    "okregowa": 21
+    "b": 12
   }
 }
