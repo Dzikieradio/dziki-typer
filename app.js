@@ -462,16 +462,24 @@ async function markAllNotificationsRead(){
 }
 
 async function loadRanking(){
- const[{data,error},{data:looks}]=await Promise.all([db.rpc('full_ranking'),db.rpc('public_profile_looks')]);
+ const[{data,error},{data:looks},{data:weekly,error:weeklyError}]=await Promise.all([db.rpc('full_ranking'),db.rpc('public_profile_looks'),db.rpc('weekly_summary')]);
  if(error){$('ranking').textContent='Nie udało się pobrać rankingu.';return}
  const lm={};(looks||[]).forEach(x=>lm[x.nickname]=x);
  const rows=(data||[]).slice(0,50);
- if(!rows.length){$('ranking').innerHTML='<div class="rankingEmpty">Ranking jest jeszcze pusty.</div>';return}
+ const wr=weekly||[];
+ let weeklyHtml='';
+ if(!weeklyError&&wr.length){
+   const w=wr[0], fmt=d=>new Date(d+'T12:00:00').toLocaleDateString('pl-PL',{day:'2-digit',month:'2-digit'});
+   const best=wr[0], exactMax=Math.max(...wr.map(x=>Number(x.exact_scores||0)));
+   const exactLeaders=wr.filter(x=>Number(x.exact_scores||0)===exactMax).slice(0,3);
+   weeklyHtml=`<div class="panel" style="margin-bottom:18px"><div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start;flex-wrap:wrap"><div><span style="font-size:12px;font-weight:800;letter-spacing:.08em;opacity:.7">🏆 PODSUMOWANIE TYGODNIA</span><h2 style="margin:5px 0 3px">Najlepsi typerzy</h2><small>${fmt(w.week_start)} – ${fmt(w.week_end)}</small></div></div><div style="margin-top:15px;display:grid;gap:10px"><div class="rankingLine"><span style="font-size:24px">👑</span><span class="rankingPlayer"><span class="rankingAvatar">${esc(best.avatar||'👤')}</span><span><b>Typer tygodnia: ${esc(best.nickname||'Bez nicku')}</b><small>${Number(best.correct_outcomes||0)} trafionych rozstrzygnięć</small></span></span><span class="rankingPoints">${Number(best.points||0)} pkt</span></div><div style="padding:12px;border-radius:12px;background:rgba(255,255,255,.04)"><b>🎯 Najwięcej dokładnych wyników: ${exactMax}</b><div style="margin-top:5px;font-size:14px;opacity:.85">${exactLeaders.map(x=>esc(x.nickname||'Bez nicku')).join(' • ')}</div></div></div><div style="margin-top:14px"><b>TOP 5 tygodnia</b>${wr.slice(0,5).map((x,i)=>`<div class="rankingLine"><span class="rankingPlace">${i+1}</span><span class="rankingPlayer"><span class="rankingAvatar">${esc(x.avatar||'👤')}</span><span><b>${esc(x.nickname||'Bez nicku')}</b><small>🎯 ${Number(x.exact_scores||0)} dokładnych • ${Number(x.picks_count||0)} typów</small></span></span><span class="rankingPoints">${Number(x.points||0)} pkt</span></div>`).join('')}</div></div>`;
+ }
+ if(!rows.length){$('ranking').innerHTML=weeklyHtml+'<div class="rankingEmpty">Ranking jest jeszcze pusty.</div>';return}
  const rk=r=>autoRank(r.points,r.exact_scores,r.finished_count??r.finished_picks??0), av=r=>lm[r.nickname]?.avatar||'👤';
  const top=rows.slice(0,3);
  const podium=`<div class="rankingPodium">${top.map((r,i)=>`<div class="podiumCard podium${i+1}"><div class="podiumPlace">${i===0?'🥇':i===1?'🥈':'🥉'} ${i+1}</div><div class="podiumAvatar">${esc(av(r))}</div><div class="podiumNick">${esc(r.nickname||'Bez nicku')}</div><span class="rankbadge">${esc(rk(r))}</span><div class="podiumStats"><span><b>${Number(r.picks_count||0)}</b><small>typów</small></span><span><b>${Number(r.points||0)}</b><small>pkt</small></span></div></div>`).join('')}</div>`;
  const list=rows.map((r,i)=>`<div class="rankingLine"><span class="rankingPlace">${i+1}</span><span class="rankingPlayer"><span class="rankingAvatar">${esc(av(r))}</span><span><b>${esc(r.nickname||'Bez nicku')}</b><small>🎯 ${Number(r.exact_scores||0)} dokładnych</small></span></span><span class="rankingPicks">${Number(r.picks_count||0)}</span><span class="rankingPoints">${Number(r.points||0)}</span><span class="rankingRank"><span class="rankbadge">${esc(rk(r))}</span></span></div>`).join('');
- $('ranking').innerHTML=`${podium}<div class="rankingTable"><div class="rankingLine rankingHeader"><span>#</span><span>Gracz</span><span>Typy</span><span>Pkt</span><span>Ranga</span></div>${list}</div><div class="rankingFooter">👥 Ranking pokazuje maksymalnie 50 graczy.</div>`;
+ $('ranking').innerHTML=`${weeklyHtml}${podium}<div class="rankingTable"><div class="rankingLine rankingHeader"><span>#</span><span>Gracz</span><span>Typy</span><span>Pkt</span><span>Ranga</span></div>${list}</div><div class="rankingFooter">👥 Ranking pokazuje maksymalnie 50 graczy.</div>`;
 }
 async function showTab(t){
   const m=t==='matches',l=t==='live',r=t==='ranking',c=t==='chat',n=t==='notifications',a=t==='admin';
