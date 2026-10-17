@@ -22,7 +22,7 @@ async function ensureNickname(u,fallback=''){
  if(error){alert(error.code==='23505'?'Ten nick jest już zajęty. Wybierz inny nick.':'Nie udało się zapisać nicku: '+error.message);return false}
  return true;
 }
-async function logout(){if(presenceChannel){try{await presenceChannel.untrack();await db.removeChannel(presenceChannel)}catch(e){}}await db.auth.signOut();location.reload()}async function loadProfile(){const{data,error}=await db.from('profiles').select('id,nickname,avatar,favorite_club').eq('id',user.id).maybeSingle();profile=data||null;const nick=profile?.nickname||user.user_metadata?.nickname||user.email;if($('nicknameBox'))$('nicknameBox').classList.add('hidden');$('userInfo').innerHTML=`<button class="profileLink" onclick="showMyProfile()">${esc(profile?.avatar||'👤')} ${esc(nick)}</button>`}async function saveNickname(){const n=$('nickname').value.trim();if(n.length<2){$('nickMsg').textContent='Nick musi mieć co najmniej 2 znaki.';return}const{error}=await db.from('profiles').upsert({id:user.id,nickname:n});if(error){$('nickMsg').textContent=error.code==='23505'?'Ten nick jest już zajęty.':'❌ '+error.message;return}$('nickMsg').textContent='';await loadProfile();await loadRanking()}function locked(m){return m.kickoff&&Date.now()>=new Date(m.kickoff).getTime()}async function enter(u){user=u;const nickOk=await ensureNickname(u);if(!nickOk)return;$('auth').classList.add('hidden');$('app').classList.remove('hidden');await loadProfile();await startPresence();await loadPicks();await loadResults();await loadGoals();await checkAdmin();await loadNotifications();render()}
+async function logout(){if(presenceChannel){try{await presenceChannel.untrack();await db.removeChannel(presenceChannel)}catch(e){}}await db.auth.signOut();location.reload()}async function loadProfile(){const{data,error}=await db.from('profiles').select('id,nickname,avatar,favorite_club').eq('id',user.id).maybeSingle();profile=data||null;const nick=profile?.nickname||user.user_metadata?.nickname||user.email;if($('nicknameBox'))$('nicknameBox').classList.add('hidden');$('userInfo').innerHTML=`<button class="profileLink" onclick="showMyProfile()">${esc(profile?.avatar||'👤')} ${esc(nick)}</button>`}async function saveNickname(){const n=$('nickname').value.trim();if(n.length<2){$('nickMsg').textContent='Nick musi mieć co najmniej 2 znaki.';return}const{error}=await db.from('profiles').upsert({id:user.id,nickname:n});if(error){$('nickMsg').textContent=error.code==='23505'?'Ten nick jest już zajęty.':'❌ '+error.message;return}$('nickMsg').textContent='';await loadProfile();await loadRanking()}function locked(m){return m.scheduleStatus==='cancelled'||m.scheduleStatus==='postponed'||(m.kickoff&&Date.now()>=new Date(m.kickoff).getTime())}async function enter(u){user=u;const nickOk=await ensureNickname(u);if(!nickOk)return;$('auth').classList.add('hidden');$('app').classList.remove('hidden');await loadProfile();await startPresence();await loadPicks();await loadResults();await loadGoals();await checkAdmin();await loadNotifications();render()}
 function onlineCount(){return Object.keys(onlineUsers).length}
 function renderOnline(){
  const n=onlineCount();
@@ -85,7 +85,7 @@ function fixtureLocalInput(kickoff){
 }
 
 async function loadMatchTimeOverrides(){
-  const{data,error}=await db.from('match_time_overrides').select('match_id,kickoff');
+  const{data,error}=await db.from('match_time_overrides').select('match_id,kickoff,status');
   if(error){
     console.warn('match_time_overrides:',error.message);
     return;
@@ -94,6 +94,7 @@ async function loadMatchTimeOverrides(){
     const m=MATCHES.find(v=>v.id===x.match_id&&!v._custom);
     if(!m)return;
     m.kickoff=x.kickoff;
+    m.scheduleStatus=x.status||'scheduled';
     m.label=fixtureDateLabel(x.kickoff);
   });
 }
@@ -105,6 +106,7 @@ async function editMatchTime(id){
 
   $('matchTimeEditor')?.remove();
   const current=fixtureLocalInput(m.kickoff);
+  const currentStatus=m.scheduleStatus||'scheduled';
   const dateValue=current?current.slice(0,10):'';
   const timeValue=current?current.slice(11,16):'';
   const overlay=document.createElement('div');
@@ -113,6 +115,14 @@ async function editMatchTime(id){
   overlay.innerHTML=`<div style="width:min(430px,100%);padding:22px;border-radius:18px;background:#151515;color:#fff;box-shadow:0 20px 60px rgba(0,0,0,.55)">
     <h3 style="margin:0 0 8px">🗓 Edytuj termin meczu</h3>
     <p style="margin:0 0 18px;opacity:.8">${esc(m.home)} — ${esc(m.away)}</p>
+    <label style="display:block;margin-bottom:14px;font-weight:700">Status meczu
+      <select id="matchScheduleStatus" style="display:block;width:100%;margin-top:7px;padding:13px;font-size:17px">
+        <option value="scheduled" ${currentStatus==='scheduled'?'selected':''}>Zaplanowany</option>
+        <option value="postponed" ${currentStatus==='postponed'?'selected':''}>Przełożony</option>
+        <option value="cancelled" ${currentStatus==='cancelled'?'selected':''}>Odwołany</option>
+      </select>
+    </label>
+    <p style="font-size:12px;opacity:.8">Dla przełożonego meczu można pozostawić datę i godzinę puste, dopóki nie będzie nowego terminu.</p>
     <label style="display:block;margin-bottom:14px;font-weight:700">Data
       <input id="matchDateInput" type="date" value="${dateValue}" style="display:block;width:100%;box-sizing:border-box;margin-top:7px;padding:13px;font-size:18px">
     </label>
@@ -133,20 +143,23 @@ async function editMatchTime(id){
 
 async function saveMatchTime(id){
   if(!isAdmin)return;
+  const status=$('matchScheduleStatus')?.value||'scheduled';
   const date=$('matchDateInput')?.value;
   const time=$('matchTimeInput')?.value;
   const errorBox=$('matchTimeError');
   const saveButton=$('saveMatchTimeBtn');
-  if(!date||!time){if(errorBox)errorBox.textContent='Wybierz datę oraz godzinę.';return}
-
-  const d=new Date(`${date}T${time}:00`);
-  if(Number.isNaN(d.getTime())){if(errorBox)errorBox.textContent='Nieprawidłowa data lub godzina.';return}
+  if(!['scheduled','postponed','cancelled'].includes(status))return;
+  if(status==='scheduled'&&(!date||!time)){if(errorBox)errorBox.textContent='Dla zaplanowanego meczu wybierz datę i godzinę.';return}
+  if((date&&!time)||(!date&&time)){if(errorBox)errorBox.textContent='Podaj datę i godzinę razem albo pozostaw oba pola puste.';return}
+  const d=date&&time?new Date(`${date}T${time}:00`):null;
+  if(d&&Number.isNaN(d.getTime())){if(errorBox)errorBox.textContent='Nieprawidłowa data lub godzina.';return}
 
   if(saveButton){saveButton.disabled=true;saveButton.textContent='Zapisywanie…'}
   if(errorBox)errorBox.textContent='';
   const{error}=await db.from('match_time_overrides').upsert({
     match_id:id,
-    kickoff:d.toISOString(),
+    kickoff:d?d.toISOString():null,
+    status,
     updated_at:new Date().toISOString()
   },{onConflict:'match_id'});
 
@@ -157,11 +170,11 @@ async function saveMatchTime(id){
   }
 
   const m=MATCHES.find(x=>x.id===id&&!x._custom);
-  if(m){m.kickoff=d.toISOString();m.label=fixtureDateLabel(m.kickoff)}
+  if(m){m.kickoff=d?d.toISOString():null;m.scheduleStatus=status;m.label=fixtureDateLabel(m.kickoff)}
   $('matchTimeEditor')?.remove();
   render();
   await loadAdmin();
-  alert('✓ Data i godzina meczu zostały zapisane.');
+  alert('✓ Termin i status meczu zostały zapisane.');
 }
 
 async function loadPicks(){const{data,error}=await db.from('picks').select('match_id,home_score,away_score').eq('user_id',user.id);if(error){$('status').innerHTML='<div class="warn">⚠️ Nie udało się pobrać typów.</div>';return}picks={};(data||[]).forEach(p=>picks[p.match_id]=p)}async function savePick(id){const m=MATCHES.find(x=>x.id===id);if(locked(m))return;const h=Number($('h-'+id).value),a=Number($('a-'+id).value);if(!Number.isInteger(h)||!Number.isInteger(a)||h<0||a<0){alert('Wpisz oba wyniki jako liczby 0 lub większe.');return}const{error}=await db.from('picks').upsert({user_id:user.id,match_id:id,home_score:h,away_score:a},{onConflict:'user_id,match_id'});if(error){alert('Nie udało się zapisać: '+error.message);return}picks[id]={match_id:id,home_score:h,away_score:a};render()}function liveMinute(r){
@@ -173,7 +186,7 @@ async function loadPicks(){const{data,error}=await db.from('picks').select('matc
  return Math.min(v,130);
 }
 function resultBadge(m){const r=results[m.id];if(!r||r.status==='scheduled')return '';if(r.status==='live'){const lm=liveMinute(r);const state=(lm===45?'⏸ PRZERWA':`🔴 NA ŻYWO${lm?` • ${lm}'`:''}`);return `<div class="resultline live"><span>${state}</span><b>${r.home_score??0} : ${r.away_score??0}</b></div>`;}if(r.status==='finished')return `<div class="resultline finished"><span>KONIEC</span><b>${r.home_score} : ${r.away_score}</b></div>`;return ''}
-function card(m){const p=picks[m.id],isLocked=locked(m),disabled=isLocked?'disabled':'';return `<div class="match league-card-${m.league}">${resultBadge(m)}${goalsHtml(m.id)}<div class="teams">${m.home}<br><span class="versus">—</span> ${m.away}</div><div class="date">🗓 ${m.label}</div><div class="score"><input id="h-${m.id}" type="number" min="0" inputmode="numeric" value="${p?.home_score??''}" ${disabled}><span>:</span><input id="a-${m.id}" type="number" min="0" inputmode="numeric" value="${p?.away_score??''}" ${disabled}><button class="save" onclick="savePick('${m.id}')" ${disabled}>Zapisz</button></div>${isLocked?'<div class="locked">🔒 Typowanie zamknięte</div>':p?'<div class="saved">✓ Typ zapisany online</div>':''}</div>`}
+function card(m){const p=picks[m.id],isLocked=locked(m),disabled=isLocked?'disabled':'';const scheduleNotice=m.scheduleStatus==='cancelled'?'⛔ Mecz odwołany':m.scheduleStatus==='postponed'?'📅 Mecz przełożony':'';return `<div class="match league-card-${m.league}">${scheduleNotice?`<div class="locked">${scheduleNotice}</div>`:''}${resultBadge(m)}${goalsHtml(m.id)}<div class="teams">${m.home}<br><span class="versus">—</span> ${m.away}</div><div class="date">🗓 ${m.label}</div><div class="score"><input id="h-${m.id}" type="number" min="0" inputmode="numeric" value="${p?.home_score??''}" ${disabled}><span>:</span><input id="a-${m.id}" type="number" min="0" inputmode="numeric" value="${p?.away_score??''}" ${disabled}><button class="save" onclick="savePick('${m.id}')" ${disabled}>Zapisz</button></div>${isLocked?`<div class="locked">${scheduleNotice||'🔒 Typowanie zamknięte'}</div>`:p?'<div class="saved">✓ Typ zapisany online</div>':''}</div>`}
 async function loadResults(){const{data,error}=await db.from('match_results').select('match_id,home_score,away_score,status,minute,updated_at');if(error)return;results={};(data||[]).forEach(r=>results[r.match_id]=r)}
 async function loadGoals(){const{data,error}=await db.from('match_goals').select('id,match_id,team,player,minute').order('minute',{ascending:true});if(error)return;goalEvents={};(data||[]).forEach(g=>(goalEvents[g.match_id]??=[]).push(g))}
 function goalsHtml(id){const gs=goalEvents[id]||[];return gs.length?`<div class="goalEvents">${gs.map(g=>`<div>⚽ ${g.minute}' <b>${esc(g.player)}</b><small>${g.team==='home'?'Gospodarze':'Goście'}</small></div>`).join('')}</div>`:''}
@@ -199,7 +212,7 @@ async function loadAdmin(){
     const status=r.status||'scheduled';
     const label=status==='live'?'🔴 LIVE':status==='finished'?'✓ Zakończony':'◷ Przed meczem';
     const score=status==='scheduled'?'—':`${r.home_score??0} : ${r.away_score??0}`;
-    return `<div class="adminMatchRow" data-status="${status}"><button class="adminMatchSummary" onclick="toggleAdminMatch('${m.id}')"><span class="adminMatchMain"><b>${esc(m.home)} — ${esc(m.away)}</b><small>🗓 ${esc(m.label)}</small></span><span class="adminMatchResult"><strong>${score}</strong><em class="statusPill ${status}">${label}</em></span><span class="adminChevron" id="ac-${m.id}">⌄</span></button><div id="ae-${m.id}" class="adminMatchEdit hidden"><div class="adminEditGrid"><label>Status<select id="rs-${m.id}"><option value="scheduled" ${status==='scheduled'?'selected':''}>Przed meczem</option><option value="live" ${status==='live'?'selected':''}>🔴 Na żywo</option><option value="finished" ${status==='finished'?'selected':''}>Koniec</option></select></label><label>Minuta<input id="rm-${m.id}" class="minute" type="number" min="1" max="130" inputmode="numeric" placeholder="min" value="${r.minute??''}"></label></div><div class="adminScoreEdit"><input id="rh-${m.id}" type="number" min="0" inputmode="numeric" value="${r.home_score??''}" placeholder="0"><span>:</span><input id="ra-${m.id}" type="number" min="0" inputmode="numeric" value="${r.away_score??''}" placeholder="0"><button onclick="saveResult('${m.id}')">💾 Zapisz</button></div><div class="goalAdmin"><h4>⚽ Strzelcy bramek</h4><div class="goalAdd"><select id="gt-${m.id}"><option value="home">${esc(m.home)}</option><option value="away">${esc(m.away)}</option></select><input id="gp-${m.id}" placeholder="Imię i nazwisko"><input id="gm-${m.id}" type="number" min="1" max="130" placeholder="min"><button onclick="addGoal('${m.id}')">⚽ Dodaj bramkę</button></div><div class="goalAdminList">${(goalEvents[m.id]||[]).map(g=>`<div><span>⚽ ${g.minute}' ${esc(g.player)}</span><button class="dangerGhost" onclick="deleteGoal(${g.id})">🗑</button></div>`).join('')}</div></div>${!m._custom?`<div class="customMatchActions"><button onclick="editMatchTime('${m.id}')">🗓 Edytuj datę / godzinę</button></div>`:''}${m._custom?`<div class="customMatchActions"><button onclick="editCustomMatch(${Number(m._customId)})">✏️ Edytuj mecz</button>${status==='finished'?`<button onclick="archiveCustomMatch(${Number(m._customId)})">📦 Archiwizuj mecz</button>`:`<button class="dangerGhost" onclick="deleteCustomMatch(${Number(m._customId)})">🗑 Usuń mecz</button>`}</div>`:''}</div></div>`;
+    return `<div class="adminMatchRow" data-status="${status}"><button class="adminMatchSummary" onclick="toggleAdminMatch('${m.id}')"><span class="adminMatchMain"><b>${esc(m.home)} — ${esc(m.away)}</b><small>🗓 ${esc(m.label)}${m.scheduleStatus==='cancelled'?' • ⛔ ODWOŁANY':m.scheduleStatus==='postponed'?' • 📅 PRZEŁOŻONY':''}</small></span><span class="adminMatchResult"><strong>${score}</strong><em class="statusPill ${status}">${label}</em></span><span class="adminChevron" id="ac-${m.id}">⌄</span></button><div id="ae-${m.id}" class="adminMatchEdit hidden"><div class="adminEditGrid"><label>Status<select id="rs-${m.id}"><option value="scheduled" ${status==='scheduled'?'selected':''}>Przed meczem</option><option value="live" ${status==='live'?'selected':''}>🔴 Na żywo</option><option value="finished" ${status==='finished'?'selected':''}>Koniec</option></select></label><label>Minuta<input id="rm-${m.id}" class="minute" type="number" min="1" max="130" inputmode="numeric" placeholder="min" value="${r.minute??''}"></label></div><div class="adminScoreEdit"><input id="rh-${m.id}" type="number" min="0" inputmode="numeric" value="${r.home_score??''}" placeholder="0"><span>:</span><input id="ra-${m.id}" type="number" min="0" inputmode="numeric" value="${r.away_score??''}" placeholder="0"><button onclick="saveResult('${m.id}')">💾 Zapisz</button></div><div class="goalAdmin"><h4>⚽ Strzelcy bramek</h4><div class="goalAdd"><select id="gt-${m.id}"><option value="home">${esc(m.home)}</option><option value="away">${esc(m.away)}</option></select><input id="gp-${m.id}" placeholder="Imię i nazwisko"><input id="gm-${m.id}" type="number" min="1" max="130" placeholder="min"><button onclick="addGoal('${m.id}')">⚽ Dodaj bramkę</button></div><div class="goalAdminList">${(goalEvents[m.id]||[]).map(g=>`<div><span>⚽ ${g.minute}' ${esc(g.player)}</span><button class="dangerGhost" onclick="deleteGoal(${g.id})">🗑</button></div>`).join('')}</div></div>${!m._custom?`<div class="customMatchActions"><button onclick="editMatchTime('${m.id}')">🗓 Edytuj datę / godzinę</button></div>`:''}${m._custom?`<div class="customMatchActions"><button onclick="editCustomMatch(${Number(m._customId)})">✏️ Edytuj mecz</button>${status==='finished'?`<button onclick="archiveCustomMatch(${Number(m._customId)})">📦 Archiwizuj mecz</button>`:`<button class="dangerGhost" onclick="deleteCustomMatch(${Number(m._customId)})">🗑 Usuń mecz</button>`}</div>`:''}</div></div>`;
   }).join(''):'<div class="adminEmpty">Brak meczów w tym filtrze.</div>';
 }
 function adminSection(name){
