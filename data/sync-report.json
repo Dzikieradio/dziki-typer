@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-10-03T09:32:15.508Z",
+  "generated_at": "2026-10-17T07:17:53.058Z",
   "sources": [
     {
       "league": "okregowa",
@@ -17,19 +17,18 @@
       "league": "b",
       "url": "https://sportowebeskidy.pl/rozgrywki/b-klasa-zywiec-6",
       "parsed": 56,
-      "selected": 12
+      "selected": 13
     },
     {
       "league": "cup",
       "url": "https://sportowebeskidy.pl/rozgrywki/poltent-puchar-polski-podokreg-zywiec",
       "parsed": 26,
-      "selected": 1
+      "selected": 0
     }
   ],
   "totals": {
-    "cup": 1,
     "okregowa": 21,
     "a": 18,
-    "b": 12
+    "b": 13
   }
 }
