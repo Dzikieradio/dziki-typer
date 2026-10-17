@@ -163,7 +163,8 @@ for (const config of SOURCES) {
   const html = await fetchSource(config);
   const parsed = parseSchedule(html, config, ids);
   const selected = parsed.filter(match => inWindow(match, now));
-  if (!selected.length) throw new Error(`Brak meczów w aktywnym zakresie: ${config.url}`);
+  if (!selected.length && config.league !== 'cup') throw new Error(`Brak meczów w aktywnym zakresie: ${config.url}`);
+  // Puchar ma przerwy między rundami; brak meczów w oknie nie blokuje lig.
   collected.push(...selected);
   report.sources.push({ league: config.league, url: config.url, parsed: parsed.length, selected: selected.length });
 }
