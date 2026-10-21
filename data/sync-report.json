@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-10-21T04:56:15.176Z",
+  "generated_at": "2026-10-21T11:57:26.538Z",
   "sources": [
     {
       "league": "okregowa",
@@ -11,13 +11,13 @@
       "league": "a",
       "url": "https://sportowebeskidy.pl/rozgrywki/a-klasa-zywiec-6",
       "parsed": 78,
-      "selected": 19
+      "selected": 18
     },
     {
       "league": "b",
       "url": "https://sportowebeskidy.pl/rozgrywki/b-klasa-zywiec-6",
       "parsed": 56,
-      "selected": 15
+      "selected": 13
     },
     {
       "league": "cup",
@@ -27,8 +27,8 @@
     }
   ],
   "totals": {
-    "a": 19,
-    "b": 15,
-    "okregowa": 16
+    "okregowa": 16,
+    "b": 13,
+    "a": 18
   }
 }
