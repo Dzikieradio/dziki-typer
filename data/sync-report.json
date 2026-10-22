@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-10-22T17:15:21.455Z",
+  "generated_at": "2026-10-22T21:41:09.281Z",
   "sources": [
     {
       "league": "okregowa",
@@ -27,8 +27,8 @@
     }
   ],
   "totals": {
+    "a": 18,
     "okregowa": 14,
-    "b": 14,
-    "a": 18
+    "b": 14
   }
 }
