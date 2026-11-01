@@ -498,7 +498,24 @@ async function loadRoundSummary(){
  const{data,error}=await db.rpc('round_summary');
  const box=$('roundSummary'); if(!box)return;
  if(error){box.innerHTML='<div class="rankingEmpty">Nie udało się pobrać podsumowania kolejki.</div>';return}
- const rows=data||[]; if(!rows.length){box.innerHTML='<div class="rankingEmpty">Czekamy na zakończenie pierwszej kolejki weekendowej.</div>';return}
+ const rows=data||[];
+ // Nie pokazuj starego podium jako aktualnego po rozegraniu nowszej kolejki.
+ // Nowe podium pojawi się automatycznie po wpisaniu oficjalnych wyników do bazy.
+ const nowWarsaw=new Date(new Date().toLocaleString('en-US',{timeZone:'Europe/Warsaw'}));
+ const lastPlayedWeekend=(typeof MATCHES!=='undefined'?MATCHES:[])
+  .filter(m=>m.date&&['okregowa','a','b'].includes(m.league))
+  .map(m=>m.date).filter(d=>{const day=new Date(d+'T12:00:00').getDay();return (day===0||day===6)&&d<=nowWarsaw.toISOString().slice(0,10)})
+  .sort().pop();
+ const latestScoredEnd=rows.length?rows[0].round_end:null;
+ if(lastPlayedWeekend&&(!latestScoredEnd||lastPlayedWeekend>latestScoredEnd)){
+  const d=new Date(lastPlayedWeekend+'T12:00:00');
+  const saturday=new Date(d);saturday.setDate(d.getDate()-(d.getDay()===0?1:0));
+  const sunday=new Date(saturday);sunday.setDate(saturday.getDate()+1);
+  const format=x=>x.toLocaleDateString('pl-PL',{day:'2-digit',month:'2-digit',year:'numeric'});
+  box.innerHTML='<div class="rankingTitleBar"><b>⚽ KOLEJKA '+format(saturday)+' – '+format(sunday)+'</b><small>aktualizacja wyników</small></div><div class="rankingEmpty">Trwa weryfikacja oficjalnych wyników i rozliczanie typów. Klasyfikacja typerów tej kolejki pojawi się po zatwierdzeniu rezultatów.</div>';
+  return;
+ }
+ if(!rows.length){box.innerHTML='<div class="rankingEmpty">Czekamy na zakończenie pierwszej kolejki weekendowej.</div>';return}
  const fmt=d=>new Date(d+'T12:00:00').toLocaleDateString('pl-PL',{day:'2-digit',month:'2-digit',year:'numeric'});
  const top=rows.slice(0,3);
  box.innerHTML=`<div class="rankingTitleBar"><b>⚽ KOLEJKA ${fmt(rows[0].round_start)} – ${fmt(rows[0].round_end)}</b><small>do następnej kolejki</small></div><div class="rankingPodium">${top.map((r,i)=>`<div class="podiumCard podium${i+1}"><div class="podiumPlace">${i===0?'👑':i===1?'🥈':'🥉'} ${i+1}</div><div class="podiumAvatar">${esc(r.avatar||'👤')}</div><div class="podiumNick">${esc(r.nickname||'Bez nicku')}</div><div class="podiumStats"><span><b>${Number(r.points||0)}</b><small>pkt</small></span><span><b>${Number(r.exact_scores||0)}</b><small>dokładnych</small></span></div></div>`).join('')}</div><div class="rankingTable"><div class="rankingLine rankingHeader"><span>#</span><span>Gracz</span><span>M</span><span>🎯</span><span>Typy</span><span>Pkt</span></div>${rows.map((r,i)=>`<div class="rankingLine"><span class="rankingPlace">${i+1}</span><span class="rankingPlayer"><span class="rankingAvatar">${esc(r.avatar||'👤')}</span><span><b>${esc(r.nickname||'Bez nicku')}</b><small>${Number(r.correct_outcomes||0)} trafionych rozstrzygnięć</small></span></span><span class="rankingPlayed">${Number(r.picks_count||0)}</span><span class="rankingExact">${Number(r.exact_scores||0)}</span><span class="rankingPicks">${Number(r.picks_count||0)}</span><span class="rankingPoints">${Number(r.points||0)}</span></div>`).join('')}</div><div class="rankingLegend">👑 Wyniki kolejki pozostają tutaj do czasu rozegrania kolejnego weekendu.</div>`;
