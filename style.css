@@ -236,3 +236,11 @@ button{border:0;border-radius:11px;background:var(--accent);color:#111;font-weig
 @media(min-width:1100px){.wrap{max-width:980px}.filters{grid-template-columns:repeat(6,minmax(0,1fr))}.filters button{font-size:13px;padding:12px 5px}}
 @media(min-width:700px) and (max-width:1099px){.filters{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media(max-width:520px){.filters{grid-template-columns:repeat(2,minmax(0,1fr))}.filters button{font-size:12px}}
+
+/* Osobna identyfikacja kolorystyczna obu lig koszykówki */
+.filters button[data-f="zlk1"]{border:1px solid #a78bfa;color:#ddd6fe;background:rgba(139,92,246,.15)}
+.filters button[data-f="zlk1"].active{background:#7c3aed;border-color:#a78bfa;color:#fff}
+.filters button[data-f="zlk2"]{border:1px solid #fb923c;color:#fed7aa;background:rgba(249,115,22,.14)}
+.filters button[data-f="zlk2"].active{background:#ea580c;border-color:#fdba74;color:#fff}
+.league-zlk1{border-color:#a78bfa;background:linear-gradient(90deg,rgba(139,92,246,.2),#171c22)}
+.league-zlk2{border-color:#fb923c;background:linear-gradient(90deg,rgba(249,115,22,.2),#171c22)}
